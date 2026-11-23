@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kiosk E-Voting OSIS - Layar Sentuh TV Android</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Kiosk Touchscreen Optimizations */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    input, textarea {
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    body {
+      touch-action: manipulation;
+    }
+    .kiosk-card {
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .kiosk-card:hover {
+      transform: translateY(-8px) scale(1.01);
+    }
+    .kiosk-card:active {
+      transform: scale(0.96);
+    }
+    .modal-enter {
+      animation: kioskPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes kioskPop {
+      0% { opacity: 0; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes pulseRing {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.5); }
+      70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(37, 99, 235, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+    }
+    .touch-pulse {
+      animation: pulseRing 2s infinite;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-800 min-h-screen flex flex-col font-sans overflow-x-hidden">
+
+  <!-- ================= TOP BAR (TV KIOSK HEADER) ================= -->
+  <header class="bg-slate-900/95 border-b border-slate-800 text-white px-4 sm:px-8 py-3.5 sticky top-0 z-30 no-print">
+    <div class="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand & TPS Info -->
+      <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 border border-blue-400/30">
+          <i data-lucide="vote" class="w-7 h-7"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="headerTpsBadge" class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span id="tpsNameDisplay">TPS KELAS X-A</span>
+            </span>
+            <span id="modeBadgeDisplay" class="px-2.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold">
+              Mode: Konfirmasi Sentuh
+            </span>
+          </div>
+          <h1 id="schoolTitleDisplay" class="font-black text-lg sm:text-2xl tracking-tight text-white mt-0.5">
+            PEMILIHAN KETUA & WAKIL OSIS 2026/2027
+          </h1>
+        </div>
+      </div>
+
+      <!-- Right Status & Teacher Controls -->
+      <div class="flex items-center space-x-2.5 sm:space-x-4">
+        <!-- Total Votes Counter Badge -->
+        <div class="bg-slate-800/90 border border-slate-700 px-4 py-2 rounded-2xl flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+            <i data-lucide="users" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Suara Masuk</span>
+            <span id="headerVoteCounter" class="text-lg sm:text-xl font-black text-white leading-none">0 Siswa</span>
+          </div>
+        </div>
+
+        <!-- Switch Bilik / Hasil (Teacher) -->
+        <button id="btnNavBilik" onclick="switchView('vote')" class="hidden px-4 py-2.5 rounded-xl text-sm font-extrabold transition-all bg-blue-600 text-white flex items-center gap-2 shadow-lg">
+          <i data-lucide="layout-grid" class="w-4 h-4"></i>
+          <span>Layar Bilik TV</span>
+        </button>
+
+        <!-- Fullscreen Toggle for Android TV -->
+        <button onclick="toggleFullScreen()" title="Layar Penuh TV" class="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition active:scale-95">
+          <i data-lucide="maximize" id="fullscreenIcon" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Teacher Control & Quick Count Button -->
+        <button onclick="openTeacherAuthModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-sm font-bold transition flex items-center gap-2 active:scale-95">
+          <i data-lucide="SlidersHorizontal" class="w-4 h-4 text-amber-400"></i>
+          <span class="hidden md:inline">Panel Guru & Hasil</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="flex-grow max-w-[1600px] w-full mx-auto px-4 sm:px-8 py-5 flex flex-col justify-between">
+
+    <!-- VIEW 1: LAYAR BILIK SUARA TV ANDROID -->
+    <section id="votingView" class="flex-grow flex flex-col justify-between space-y-5">
+      
+      <!-- Big Callout Instruction for Students -->
+      <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 rounded-2xl p-4 sm:p-5 text-white shadow-xl border border-blue-400/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center space-x-4">
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center flex-shrink-0 touch-pulse">
+            <i data-lucide="hand-metal" class="w-7 h-7 sm:w-8 sm:h-8 text-yellow-300"></i>
+          </div>
+          <div>
+            <h2 class="text-lg sm:text-2xl font-black tracking-tight">
+              SILAKAN SENTUH / TEKAN FOTO PASLON PILIHANMU!
+            </h2>
+            <p class="text-xs sm:text-sm text-blue-100 font-medium">
+              Tidak perlu mengetik nama atau kelas. Cukup ketuk langsung pada foto kandidat di layar TV ini.
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-900/30 px-4 py-2 rounded-xl border border-white/15 flex-shrink-0">
+          <i data-lucide="shield-check" class="w-5 h-5 text-emerald-300"></i>
+          <span class="text-xs sm:text-sm font-bold text-white">1 Siswa = 1 Suara (Diawasi Guru)</span>
+        </div>
+      </div>
+
+      <!-- Candidate Giant Cards Grid -->
+      <div id="candidatesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 my-auto py-1">
+        <!-- Rendered dynamically by JS -->
+      </div>
+
+    </section>
+
+    <!-- VIEW 2: HASIL SUARA / REKAPITULASI KELAS (GURU PENGAWAS) -->
+    <section id="resultsView" class="hidden bg-slate-50 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-8 text-slate-800">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold mb-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-600 animate-ping"></span>
+            REKAPITULASI SUARA SAH
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-black text-slate-900">Hasil Perhitungan Suara (<span id="reportTpsTitle">TPS KELAS X-A</span>)</h2>
+          <p class="text-sm text-slate-500 mt-0.5">Data tersimpan secara lokal di perangkat TV Android ini</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5 no-print">
+          <button onclick="switchView('vote')" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-extrabold transition flex items-center gap-2 shadow-md">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            Kembali ke Layar Pilih TV
+          </button>
+          <button onclick="openSettingsModal()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold transition flex items-center gap-2">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+            Pengaturan TPS & Kandidat
+          </button>
+          <button onclick="window.print()" class="px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-bold transition flex items-center gap-2">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            Cetak Berita Acara
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary Stat Boxes -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="check-check" class="w-8 h-8"></i>
+          </div>
+          <div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Suara Sah Masuk</span>
+            <p id="totalVotesStat" class="text-3xl sm:text-4xl font-black text-slate-900 mt-0.5">0</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="trophy" class="w-8 h-8"></i>
+          </div>
+          <div class="overflow-hidden">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Unggul di Kelas Ini</span>
+            <p id="leadingCandidateStat" class="text-lg sm:text-xl font-black text-slate-900 mt-0.5 truncate">-</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="clock" class="w-8 h-8"></i>
+          </div>
+          <div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Suara Terakhir Masuk</span>
+            <p id="lastVoteTimeStat" class="text-lg sm:text-xl font-extrabold text-slate-800 mt-0.5">Belum ada</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Candidate Bar Results -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+        <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+          <i data-lucide="bar-chart-horizontal" class="w-5 h-5 text-blue-600"></i>
+          Perolehan Suara Masing-Masing Pasangan Calon
+        </h3>
+        <div id="resultsBarContainer" class="space-y-5">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= MODAL 1: KONFIRMASI SENTUH BESAR (TANPA KETIK) ================= -->
+  <div id="confirmModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl modal-enter border-4 border-blue-500 text-center">
+      
+      <span class="inline-block px-4 py-1 rounded-full bg-blue-100 text-blue-800 font-extrabold text-xs sm:text-sm uppercase tracking-wider mb-3">
+        Konfirmasi Pilihanmu
+      </span>
+      <h3 class="text-2xl sm:text-3xl font-black text-slate-900">
+        Yakin Memilih Paslon Ini?
+      </h3>
+
+      <!-- Big Candidate Preview -->
+      <div class="my-6 p-5 rounded-2xl bg-slate-100 border-2 border-slate-200 flex flex-col sm:flex-row items-center gap-5 text-left">
+        <div class="relative flex-shrink-0">
+          <img id="modalCandidateImg" src="" alt="Foto Paslon" class="w-32 h-32 sm:w-36 sm:h-36 rounded-2xl object-cover border-4 border-white shadow-lg">
+          <span id="modalCandidateNumber" class="absolute -top-3 -left-3 bg-blue-600 text-white font-black text-xl px-3.5 py-1 rounded-xl shadow-md border-2 border-white">
+            01
+          </span>
+        </div>
+        <div class="text-center sm:text-left">
+          <p class="text-xs font-extrabold uppercase tracking-wider text-blue-600">Pasangan Calon Ketua & Wakil</p>
+          <h4 id="modalCandidateName" class="text-xl sm:text-2xl font-black text-slate-900 mt-1">Nama Paslon</h4>
+          <p id="modalCandidateSlogan" class="text-xs sm:text-sm text-slate-600 italic mt-1.5">"Slogan paslon"</p>
+        </div>
+      </div>
+
+      <!-- Giant Touch Buttons for TV -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+        <button 
+          onclick="closeConfirmModal()" 
+          class="w-full py-4 sm:py-5 bg-rose-100 hover:bg-rose-200 active:scale-95 text-rose-700 rounded-2xl font-black text-base sm:text-lg transition flex items-center justify-center gap-2 border-2 border-rose-200"
+        >
+          <i data-lucide="x-circle" class="w-6 h-6"></i>
+          <span>BATAL / GANTI</span>
+        </button>
+        <button 
+          onclick="recordVoteNow()" 
+          class="w-full py-4 sm:py-5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-2xl font-black text-base sm:text-lg transition flex items-center justify-center gap-2 shadow-xl shadow-emerald-600/30 border-2 border-emerald-400"
+        >
+          <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+          <span>YA, COBLOS SEKARANG!</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 2: LAYAR SUKSES + AUTO RESET ANTREAN SISWA ================= -->
+  <div id="successModal" class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-lg hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-8 text-center shadow-2xl modal-enter border-4 border-emerald-400">
+      
+      <div class="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
+        <i data-lucide="check-check" class="w-14 h-14"></i>
+      </div>
+
+      <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-xs uppercase tracking-widest">
+        SUARA SAH TERCATAT
+      </span>
+      <h3 class="text-3xl font-black text-slate-900 mt-2">TERIMA KASIH!</h3>
+      <p class="text-sm sm:text-base text-slate-600 mt-1 font-medium">
+        Suara kamu untuk <strong id="successVotedName" class="text-emerald-700">Paslon 01</strong> telah berhasil disimpan.
+      </p>
+
+      <div class="mt-6 p-4 rounded-2xl bg-slate-100 border border-slate-200">
+        <p class="text-xs font-bold text-slate-500 uppercase">Silakan kembali ke tempat duduk</p>
+        <p class="text-sm font-extrabold text-slate-800 mt-1">
+          Layar akan siap untuk siswa berikutnya dalam <span id="countdownTimer" class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white font-black text-sm mx-1">3</span> detik...
+        </p>
+      </div>
+
+      <button 
+        onclick="finishSuccessEarly()" 
+        class="mt-6 w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-extrabold text-sm transition active:scale-95"
+      >
+        Lanjut Siswa Berikutnya Sekarang
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 3: DETAIL VISI & MISI ================= -->
+  <div id="visionModal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl modal-enter relative max-h-[90vh] flex flex-col">
+      <button onclick="closeVisionModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-2 bg-slate-100 rounded-full">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 border-b border-slate-200 pb-4">
+        <span id="visionModalBadge" class="bg-blue-600 text-white font-black px-3.5 py-1.5 rounded-xl text-sm">Paslon 01</span>
+        <div>
+          <span class="text-xs font-bold text-slate-400 uppercase block">Visi & Program Kerja</span>
+          <h3 id="visionModalTitle" class="text-xl font-black text-slate-900">Nama Paslon</h3>
+        </div>
+      </div>
+
+      <div class="overflow-y-auto mt-5 pr-1 space-y-5 flex-grow text-base">
+        <div>
+          <h4 class="font-extrabold text-blue-700 text-xs tracking-wider uppercase flex items-center gap-1.5">
+            <i data-lucide="target" class="w-4 h-4"></i> Visi Utama
+          </h4>
+          <p id="visionModalVision" class="mt-2 text-slate-800 bg-blue-50 p-4 rounded-2xl border border-blue-100 font-semibold italic">
+            ...
+          </p>
+        </div>
+        <div>
+          <h4 class="font-extrabold text-slate-800 text-xs tracking-wider uppercase flex items-center gap-1.5">
+            <i data-lucide="list-checks" class="w-4 h-4 text-indigo-600"></i> Misi & Program Unggulan
+          </h4>
+          <ul id="visionModalMissions" class="mt-2.5 space-y-2.5 text-slate-700">
+            <!-- Missions listed here -->
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-slate-200 grid grid-cols-2 gap-3">
+        <button onclick="closeVisionModal()" class="py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-2xl text-sm transition">
+          Tutup
+        </button>
+        <button id="visionModalSelectBtn" class="py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl text-sm transition flex items-center justify-center gap-2 shadow-lg">
+          <i data-lucide="touchpad" class="w-5 h-5"></i>
+          Pilih Paslon Ini
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 4: PENGATURAN GURU & TPS KELAS ================= -->
+  <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl modal-enter max-h-[92vh] flex flex-col">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
+            <i data-lucide="sliders" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-black text-slate-900">Panel Kontrol Guru Pengawas & TPS</h3>
+            <p class="text-xs text-slate-500">Sesuaikan pengaturan layar TV kelas, mode sentuh, dan data suara</p>
+          </div>
+        </div>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-700 p-1.5 bg-slate-100 rounded-full">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="overflow-y-auto my-4 pr-1 space-y-6 flex-grow text-sm">
+        
+        <!-- 1. Identitas TPS Kelas & Mode Sentuh TV -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <div>
+            <label class="block text-xs font-extrabold uppercase text-slate-700 mb-1">Nama Kelas / TPS TV Ini</label>
+            <input 
+              type="text" 
+              id="inputTpsName" 
+              placeholder="Contoh: TPS KELAS X-A"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+          </div>
+          <div>
+            <label class="block text-xs font-extrabold uppercase text-slate-700 mb-1">Mode Sentuh Siswa di TV</label>
+            <select 
+              id="selectVotingMode" 
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="confirm">2x Sentuh (Klik Foto lalu Konfirmasi Ya)</option>
+              <option value="instant">1x Sentuh Langsung Masuk (Tanpa Pop-up)</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-extrabold uppercase text-slate-700 mb-1">Durasi Auto-Reset Layar untuk Siswa Berikutnya</label>
+            <select 
+              id="selectResetDelay" 
+              class="w-full px-3.5 py-2 rounded-xl border border-slate-300 font-semibold text-slate-800 bg-white"
+            >
+              <option value="2">Cepat (2 Detik)</option>
+              <option value="3">Standar (3 Detik)</option>
+              <option value="5">Santai (5 Detik)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 2. Edit Nama & Foto Kandidat -->
+        <div class="space-y-3">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Kustomisasi Nama & URL Foto Paslon</h4>
+          <div id="candidateEditList" class="space-y-3">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- 3. Aksi Cepat Data Suara -->
+        <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-3">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-rose-800">Manajemen & Reset Kotak Suara TV</h4>
+          <div class="flex flex-wrap gap-2.5">
+            <button onclick="generateSampleVotes()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              + Tambah 10 Suara Simulasi
+            </button>
+            <button onclick="confirmResetVotes()" id="btnResetVotes" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              Nol-kan Semua Suara Kelas Ini (0 Suara)
+            </button>
+          </div>
+          <p id="resetWarningText" class="hidden text-xs font-bold text-rose-700">
+            Klik sekali lagi tombol merah di atas untuk benar-benar menghapus semua suara ke 0!
+          </p>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-slate-200 flex justify-between items-center gap-3">
+        <button onclick="switchView('results'); closeSettingsModal();" class="px-4 py-2.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-extrabold rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          Buka Rekap Hasil Suara
+        </button>
+        <div class="flex gap-2">
+          <button onclick="closeSettingsModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs sm:text-sm">
+            Batal
+          </button>
+          <button onclick="saveSettingsFromModal()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-md">
+            Simpan Perubahan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="bg-slate-900 border-t border-slate-800 py-3 px-4 text-center text-xs text-slate-400 no-print">
+    <div class="max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p class="font-semibold text-slate-300">Kiosk E-Voting OSIS Layar Sentuh TV Android &copy; 2026/2027</p>
+      <p class="text-slate-400">Tekan langsung pada foto kandidat untuk memberikan suara • Diawasi oleh Guru Kelas</p>
+    </div>
+  </footer>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script>
+    // Default Candidates Data
+    const DEFAULT_CANDIDATES = [
+      {
+        id: 1,
+        number: "01",
+        chairName: "Arka Ramadhan",
+        viceName: "Naila Putri",
+        tagline: "Inovatif, Kolaboratif, dan Berkarakter Juara",
+        photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80",
+        accent: "from-blue-600 to-indigo-700",
+        badgeBg: "bg-blue-600",
+        btnBg: "bg-blue-600 hover:bg-blue-500 shadow-blue-600/30",
+        vision: "Mewujudkan OSIS sebagai wadah aspirasi siswa yang adaptif terhadap teknologi digital serta menumbuhkan jiwa kepemimpinan yang berakhlak mulia.",
+        missions: [
+          "Membuka program 'Kotak Aspirasi Digital' setiap bulan.",
+          "Menyelenggarakan pekan kompetisi E-Sports, Seni & Sains antarkelas.",
+          "Mendorong gerakan sekolah hijau dan ramah lingkungan."
+        ],
+        votes: 0
+      },
+      {
+        id: 2,
+        number: "02",
+        chairName: "Dimas Anggara",
+        viceName: "Citra Lestari",
+        tagline: "Harmoni Sekolah: Kreasi Seni & Prestasi Nyata",
+        photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80",
+        accent: "from-emerald-600 to-teal-700",
+        badgeBg: "bg-emerald-600",
+        btnBg: "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30",
+        vision: "Menjadikan OSIS sebagai pusat pengembangan bakat seni, olahraga, dan pemberdayaan ekstrakurikuler yang inklusif untuk seluruh siswa.",
+        missions: [
+          "Festival Seni dan Musik tahunan 'CreArt Fest' yang lebih meriah.",
+          "Peningkatan fasilitas dan kolaborasi aktif antar ekstrakurikuler.",
+          "Bimbingan belajar sebaya menghadapi olimpiade & ujian."
+        ],
+        votes: 0
+      },
+      {
+        id: 3,
+        number: "03",
+        chairName: "Rian Pratama",
+        viceName: "Alisa Zahra",
+        tagline: "Aksi Nyata, Solidaritas Kuat, Integritas Tinggi",
+        photo: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80",
+        accent: "from-violet-600 to-purple-700",
+        badgeBg: "bg-violet-600",
+        btnBg: "bg-violet-600 hover:bg-violet-500 shadow-violet-600/30",
+        vision: "Membangun lingkungan sekolah yang guyub, peduli sosial, dan siap bersaing di kancah nasional maupun global.",
+        missions: [
+          "Program OSIS Peduli Sosial & Bakti Masyarakat.",
+          "Kampanye sekolah ramah anak dan anti-perundungan (bullying).",
+          "Mengadakan bazar kewirausahaan kreatif siswa setiap semester."
+        ],
+        votes: 0
+      }
+    ];
+
+    // Storage Keys
+    const STORAGE_KEY_CANDIDATES = 'osis_tv_kiosk_candidates_v2';
+    const STORAGE_KEY_CONFIG = 'osis_tv_kiosk_config_v2';
+
+    // State
+    let candidates = [];
+    let kioskConfig = {
+      tpsName: "TPS KELAS X-A",
+      votingMode: "confirm", // 'confirm' (2-tap) or 'instant' (1-tap)
+      resetDelay: 3,         // seconds before auto-closing thank you screen
+      lastVoteTime: "-"
+    };
+    let selectedCandidate = null;
+    let countdownInterval = null;
+    let resetConfirmPending = false;
+
+    // Web Audio API Sound Generator (No External MP3 needed, works offline on TV)
+    function playTouchSound(type = 'tap') {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
+
+        if (type === 'tap') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(680, now + 0.08);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.09);
+        } else if (type === 'success') {
+          // Pleasant two-tone chime for vote recorded
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+            gain.gain.setValueAtTime(0.22, now + idx * 0.09);
+            gain.gain.exponentialRampToValueAtTime(0.008, now + idx * 0.09 + 0.35);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.09);
+            osc.stop(now + idx * 0.09 + 0.36);
+          });
+        }
+      } catch (e) {
+        // Ignore audio errors if browser blocks autoplay
+      }
+    }
+
+    // Load Data from LocalStorage
+    function initData() {
+      const savedCand = localStorage.getItem(STORAGE_KEY_CANDIDATES);
+      if (savedCand) {
+        try {
+          candidates = JSON.parse(savedCand);
+        } catch (e) {
+          candidates = JSON.parse(JSON.stringify(DEFAULT_CANDIDATES));
+        }
+      } else {
+        candidates = JSON.parse(JSON.stringify(DEFAULT_CANDIDATES));
+        saveCandidates();
+      }
+
+      const savedCfg = localStorage.getItem(STORAGE_KEY_CONFIG);
+      if (savedCfg) {
+        try {
+          kioskConfig = { ...kioskConfig, ...JSON.parse(savedCfg) };
+        } catch (e) {}
+      }
+      updateHeaderUI();
+    }
+
+    function saveCandidates() {
+      localStorage.setItem(STORAGE_KEY_CANDIDATES, JSON.stringify(candidates));
+      updateHeaderUI();
+    }
+
+    function saveConfig() {
+      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(kioskConfig));
+      updateHeaderUI();
+    }
+
+    function updateHeaderUI() {
+      const totalVotes = candidates.reduce((sum, c) => sum + c.votes, 0);
+      document.getElementById('tpsNameDisplay').textContent = kioskConfig.tpsName;
+      document.getElementById('reportTpsTitle').textContent = kioskConfig.tpsName;
+      document.getElementById('headerVoteCounter').textContent = `${totalVotes} Suara`;
+      document.getElementById('modeBadgeDisplay').textContent = 
+        kioskConfig.votingMode === 'instant' 
+          ? 'Mode: 1x Sentuh Langsung Coblos' 
+          : 'Mode: Konfirmasi Sentuh Aman';
+    }
+
+    // Render Giant TV Cards
+    function renderCandidates() {
+      const grid = document.getElementById('candidatesGrid');
+      grid.innerHTML = '';
+
+      candidates.forEach((c) => {
+        const card = document.createElement('div');
+        card.className = "kiosk-card bg-white rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-800/80 hover:border-blue-400 flex flex-col justify-between cursor-pointer relative group";
+
+        // Clicking anywhere on the photo or main area triggers selection
+        card.innerHTML = `
+          <div onclick="handleCandidatePhotoTap(${c.id})" class="flex-grow flex flex-col">
+            <!-- Giant Candidate Photo Area -->
+            <div class="relative aspect-[4/3] sm:aspect-[16/13] w-full overflow-hidden bg-slate-200">
+              <img 
+                src="${c.photo}" 
+                alt="Paslon ${c.number}" 
+                class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                onerror="this.src='https://placehold.co/800x650/1e40af/ffffff?text=PASLON+${c.number}'"
+              >
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent"></div>
+
+              <!-- Huge Number Badge -->
+              <div class="absolute top-4 left-4 ${c.badgeBg} text-white font-black px-4 py-2 rounded-2xl shadow-xl border-2 border-white flex items-center gap-1.5">
+                <span class="text-xs uppercase tracking-wider opacity-90">NO. URUT</span>
+                <span class="text-2xl sm:text-3xl leading-none">${c.number}</span>
+              </div>
+
+              <!-- Tap Photo Badge Hint -->
+              <div class="absolute top-4 right-4 bg-white/95 text-slate-900 font-extrabold px-3.5 py-1.5 rounded-xl shadow-lg text-xs flex items-center gap-1.5">
+                <i data-lucide="pointer" class="w-4 h-4 text-blue-600"></i>
+                <span>SENTUH FOTO</span>
+              </div>
+
+              <!-- Names Overlay on Bottom of Photo -->
+              <div class="absolute bottom-3 left-4 right-4 text-white">
+                <span class="px-2.5 py-0.5 rounded-md bg-white/20 backdrop-blur-md text-[11px] font-extrabold uppercase tracking-wider">
+                  Calon Ketua & Wakil OSIS
+                </span>
+                <h3 class="text-xl sm:text-2xl lg:text-3xl font-black leading-tight mt-1 drop-shadow-md">
+                  ${c.chairName} & ${c.viceName}
+                </h3>
+              </div>
+            </div>
+
+            <!-- Tagline & Short Vision -->
+            <div class="p-5 flex-grow flex flex-col justify-between space-y-3 bg-white">
+              <p class="text-xs sm:text-sm font-bold text-slate-500 italic line-clamp-1">
+                "${c.tagline}"
+              </p>
+              <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                <span class="text-[11px] font-extrabold uppercase tracking-wider text-blue-600 block mb-0.5">Visi Utama:</span>
+                <p class="text-xs sm:text-sm text-slate-700 font-medium line-clamp-2 leading-snug">
+                  ${c.vision}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons Footer -->
+          <div class="px-5 pb-5 pt-1 bg-white flex items-center gap-2.5">
+            <button 
+              onclick="event.stopPropagation(); openVisionModal(${c.id})" 
+              class="py-3.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs sm:text-sm font-extrabold transition flex items-center justify-center gap-1.5"
+              title="Baca Visi & Misi"
+            >
+              <i data-lucide="info" class="w-4 h-4"></i>
+              <span>Visi Misi</span>
+            </button>
+
+            <button 
+              onclick="event.stopPropagation(); handleCandidatePhotoTap(${c.id})" 
+              class="flex-grow py-3.5 px-4 ${c.btnBg} text-white rounded-2xl text-sm sm:text-base font-black transition flex items-center justify-center gap-2 shadow-lg"
+            >
+              <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+              <span>PILIH PASLON ${c.number}</span>
+            </button>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    // Handle Student Tapping on Candidate Photo or Button
+    function handleCandidatePhotoTap(candidateId) {
+      playTouchSound('tap');
+      selectedCandidate = candidates.find(c => c.id === candidateId);
+      if (!selectedCandidate) return;
+
+      // Check whether teacher set mode to 1-tap instant or 2-tap confirm
+      if (kioskConfig.votingMode === 'instant') {
+        recordVoteNow();
+      } else {
+        openConfirmModal();
+      }
+    }
+
+    function openConfirmModal() {
+      if (!selectedCandidate) return;
+      document.getElementById('modalCandidateImg').src = selectedCandidate.photo;
+      document.getElementById('modalCandidateNumber').textContent = selectedCandidate.number;
+      document.getElementById('modalCandidateName').textContent = `${selectedCandidate.chairName} & ${selectedCandidate.viceName}`;
+      document.getElementById('modalCandidateSlogan').textContent = `"${selectedCandidate.tagline}"`;
+      document.getElementById('confirmModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeConfirmModal() {
+      playTouchSound('tap');
+      document.getElementById('confirmModal').classList.add('hidden');
+      selectedCandidate = null;
+    }
+
+    // Save Vote & Show Auto-Reset Thank You Screen
+    function recordVoteNow() {
+      if (!selectedCandidate) return;
+
+      // Increment Vote
+      selectedCandidate.votes += 1;
+      kioskConfig.lastVoteTime = new Date().toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }) + ' WIB';
+
+      saveCandidates();
+      saveConfig();
+
+      // Hide Confirm Modal if open
+      document.getElementById('confirmModal').classList.add('hidden');
+
+      // Play Chime & Confetti
+      playTouchSound('success');
+      try {
+        confetti({
+          particleCount: 90,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      } catch (e) {}
+
+      // Show Success Modal with Countdown
+      document.getElementById('successVotedName').textContent = 
+        `Paslon ${selectedCandidate.number} (${selectedCandidate.chairName} & ${selectedCandidate.viceName})`;
+      
+      let secondsLeft = parseInt(kioskConfig.resetDelay, 10) || 3;
+      const timerEl = document.getElementById('countdownTimer');
+      timerEl.textContent = secondsLeft;
+
+      document.getElementById('successModal').classList.remove('hidden');
+      lucide.createIcons();
+
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        secondsLeft -= 1;
+        if (secondsLeft <= 0) {
+          finishSuccessEarly();
+        } else {
+          timerEl.textContent = secondsLeft;
+        }
+      }, 1000);
+    }
+
+    function finishSuccessEarly() {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+      document.getElementById('successModal').classList.add('hidden');
+      selectedCandidate = null;
+    }
+
+    // Vision & Mission Modal
+    function openVisionModal(id) {
+      playTouchSound('tap');
+      const c = candidates.find(item => item.id === id);
+      if (!c) return;
+
+      document.getElementById('visionModalBadge').textContent = `NO. URUT ${c.number}`;
+      document.getElementById('visionModalTitle').textContent = `${c.chairName} & ${c.viceName}`;
+      document.getElementById('visionModalVision').textContent = `"${c.vision}"`;
+
+      const list = document.getElementById('visionModalMissions');
+      list.innerHTML = '';
+      c.missions.forEach((m, i) => {
+        const li = document.createElement('li');
+        li.className = "flex items-start gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200/70";
+        li.innerHTML = `
+          <span class="w-6 h-6 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">${i + 1}</span>
+          <span class="font-medium text-sm sm:text-base">${m}</span>
+        `;
+        list.appendChild(li);
+      });
+
+      document.getElementById('visionModalSelectBtn').onclick = () => {
+        closeVisionModal();
+        handleCandidatePhotoTap(c.id);
+      };
+
+      document.getElementById('visionModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeVisionModal() {
+      document.getElementById('visionModal').classList.add('hidden');
+    }
+
+    // Switch View (Bilik TV vs Rekapitulasi Hasil Guru)
+    function switchView(view) {
+      const votingView = document.getElementById('votingView');
+      const resultsView = document.getElementById('resultsView');
+      const btnNavBilik = document.getElementById('btnNavBilik');
+
+      if (view === 'results') {
+        votingView.classList.add('hidden');
+        resultsView.classList.remove('hidden');
+        btnNavBilik.classList.remove('hidden');
+        renderResultsView();
+      } else {
+        resultsView.classList.add('hidden');
+        votingView.classList.remove('hidden');
+        btnNavBilik.classList.add('hidden');
+        renderCandidates();
+      }
+      lucide.createIcons();
+    }
+
+    // Render Rekapitulasi Hasil Suara
+    function renderResultsView() {
+      const totalVotes = candidates.reduce((acc, c) => acc + c.votes, 0);
+      document.getElementById('totalVotesStat').textContent = `${totalVotes} Suara`;
+      document.getElementById('lastVoteTimeStat').textContent = kioskConfig.lastVoteTime || 'Belum ada';
+
+      let highest = -1;
+      let leader = null;
+      candidates.forEach(c => {
+        if (c.votes > highest) {
+          highest = c.votes;
+          leader = c;
+        }
+      });
+
+      document.getElementById('leadingCandidateStat').textContent = 
+        (totalVotes > 0 && leader) ? `Paslon ${leader.number} (${leader.chairName})` : 'Belum ada suara';
+
+      const container = document.getElementById('resultsBarContainer');
+      container.innerHTML = '';
+
+      candidates.forEach(c => {
+        const pct = totalVotes > 0 ? ((c.votes / totalVotes) * 100).toFixed(1) : 0;
+        const isTop = totalVotes > 0 && c.votes === highest && highest > 0;
+
+        const item = document.createElement('div');
+        item.className = `p-5 rounded-2xl border-2 transition ${isTop ? 'border-blue-500 bg-blue-50/40' : 'border-slate-200 bg-slate-50'}`;
+        item.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <div class="flex items-center space-x-3.5">
+              <img src="${c.photo}" class="w-14 h-14 rounded-2xl object-cover border-2 border-white shadow" onerror="this.src='https://placehold.co/100x100/1e40af/ffffff?text=${c.number}'">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-0.5 rounded-lg bg-slate-900 text-white font-black text-xs">NO. ${c.number}</span>
+                  <h4 class="text-base sm:text-lg font-black text-slate-900">${c.chairName} & ${c.viceName}</h4>
+                  ${isTop ? '<span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-extrabold text-xs flex items-center gap-1"><i data-lucide="crown" class="w-3.5 h-3.5"></i> Terbanyak</span>' : ''}
+                </div>
+                <p class="text-xs font-semibold text-slate-500 mt-0.5">"${c.tagline}"</p>
+              </div>
+            </div>
+            <div class="text-left sm:text-right">
+              <span class="text-2xl sm:text-3xl font-black text-slate-900">${c.votes} Suara</span>
+              <span class="text-sm font-extrabold text-blue-600 block">${pct}%</span>
+            </div>
+          </div>
+          <div class="w-full h-5 bg-slate-200 rounded-full overflow-hidden p-0.5">
+            <div class="h-full rounded-full transition-all duration-700 ${isTop ? 'bg-gradient-to-r from-blue-600 to-indigo-600' : 'bg-slate-500'}" style="width: ${pct}%"></div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+
+      lucide.createIcons();
+    }
+
+    // Teacher Quick Access / Settings Modal
+    function openTeacherAuthModal() {
+      openSettingsModal();
+    }
+
+    function openSettingsModal() {
+      resetConfirmPending = false;
+      document.getElementById('resetWarningText').classList.add('hidden');
+      document.getElementById('inputTpsName').value = kioskConfig.tpsName;
+      document.getElementById('selectVotingMode').value = kioskConfig.votingMode;
+      document.getElementById('selectResetDelay').value = String(kioskConfig.resetDelay);
+
+      const editList = document.getElementById('candidateEditList');
+      editList.innerHTML = '';
+
+      candidates.forEach((c, idx) => {
+        const div = document.createElement('div');
+        div.className = "p-3.5 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-2.5";
+        div.innerHTML = `
+          <div>
+            <label class="text-[11px] font-bold text-slate-500 uppercase">Paslon ${c.number} - Calon Ketua</label>
+            <input type="text" id="editChair_${idx}" value="${c.chairName}" class="w-full mt-0.5 px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-xs">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-500 uppercase">Calon Wakil Ketua</label>
+            <input type="text" id="editVice_${idx}" value="${c.viceName}" class="w-full mt-0.5 px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-xs">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-500 uppercase">URL Foto Kandidat</label>
+            <input type="text" id="editPhoto_${idx}" value="${c.photo}" class="w-full mt-0.5 px-3 py-1.5 rounded-lg border border-slate-300 text-xs">
+          </div>
+        `;
+        editList.appendChild(div);
+      });
+
+      document.getElementById('settingsModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function saveSettingsFromModal() {
+      const newTps = document.getElementById('inputTpsName').value.trim();
+      if (newTps) kioskConfig.tpsName = newTps.toUpperCase();
+      kioskConfig.votingMode = document.getElementById('selectVotingMode').value;
+      kioskConfig.resetDelay = parseInt(document.getElementById('selectResetDelay').value, 10) || 3;
+
+      candidates.forEach((c, idx) => {
+        const ch = document.getElementById(`editChair_${idx}`).value.trim();
+        const vc = document.getElementById(`editVice_${idx}`).value.trim();
+        const ph = document.getElementById(`editPhoto_${idx}`).value.trim();
+        if (ch) c.chairName = ch;
+        if (vc) c.viceName = vc;
+        if (ph) c.photo = ph;
+      });
+
+      saveConfig();
+      saveCandidates();
+      renderCandidates();
+      renderResultsView();
+      closeSettingsModal();
+    }
+
+    function generateSampleVotes() {
+      for (let i = 0; i < 10; i++) {
+        const rand = Math.floor(Math.random() * candidates.length);
+        candidates[rand].votes += 1;
+      }
+      kioskConfig.lastVoteTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB (Simulasi)';
+      saveCandidates();
+      saveConfig();
+      renderCandidates();
+      renderResultsView();
+      closeSettingsModal();
+      switchView('results');
+    }
+
+    function confirmResetVotes() {
+      const warn = document.getElementById('resetWarningText');
+      if (!resetConfirmPending) {
+        resetConfirmPending = true;
+        warn.classList.remove('hidden');
+        return;
+      }
+      // Confirmed reset
+      candidates.forEach(c => c.votes = 0);
+      kioskConfig.lastVoteTime = "-";
+      saveCandidates();
+      saveConfig();
+      renderCandidates();
+      renderResultsView();
+      closeSettingsModal();
+    }
+
+    // Fullscreen API for Android TV
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      initData();
+      renderCandidates();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
