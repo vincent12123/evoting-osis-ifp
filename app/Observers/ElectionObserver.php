@@ -9,7 +9,7 @@ use App\Models\User;
 class ElectionObserver
 {
     /** Kolom yang memengaruhi tampilan IFP → settings_version naik (SPEC §4.2). */
-    public const KIOSK_FIELDS = ['name', 'touch_mode', 'reset_delay_seconds', 'sound_enabled', 'confetti_enabled'];
+    public const KIOSK_FIELDS = ['name', 'touch_mode', 'reset_delay_seconds', 'sound_enabled', 'confetti_enabled', 'logo_path'];
 
     /** Kolom yang tidak perlu dicatat sebagai "ubah pengaturan". */
     private const IGNORED = ['updated_at', 'settings_version', 'is_active'];

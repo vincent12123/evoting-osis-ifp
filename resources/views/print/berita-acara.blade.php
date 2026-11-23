@@ -15,7 +15,8 @@
         * { box-sizing: border-box; }
         body { font-family: "Times New Roman", Times, serif; font-size: 11.5pt; color: #000; background: #fff; margin: 0; line-height: 1.35; }
         .page { max-width: 178mm; margin: 0 auto; padding: 8mm 0; position: relative; }
-        .kop { text-align: center; border-bottom: 3px double #000; padding-bottom: 6pt; margin-bottom: 10pt; }
+        .kop { position: relative; text-align: center; border-bottom: 3px double #000; padding: 0 22mm 6pt; margin-bottom: 10pt; min-height: 18mm; }
+        .kop .logo { position: absolute; left: 0; top: 0; width: 18mm; height: 18mm; object-fit: contain; }
         .kop .school { font-size: 15pt; font-weight: bold; text-transform: uppercase; }
         .kop .address { font-size: 10pt; }
         h1 { font-size: 12.5pt; text-align: center; text-transform: uppercase; margin: 8pt 0 2pt; }
@@ -51,6 +52,9 @@
 
     <main class="page">
         <header class="kop">
+            @if ($election->logoUrl())
+                <img class="logo" src="{{ $election->logoUrl() }}" alt="Logo sekolah">
+            @endif
             <div class="school">{{ $election->school_name ?: '................................................' }}</div>
             @if ($election->school_address)
                 <div class="address">{{ $election->school_address }}</div>

@@ -67,6 +67,7 @@ class KioskApiController extends Controller
                 'sound_enabled' => $election->sound_enabled,
                 'confetti_enabled' => $election->confetti_enabled,
                 'settings_version' => $election->settings_version,
+                'logo_url' => $election->logoUrl(),
             ] : null,
             'server_time' => now()->toIso8601String(),
         ]);

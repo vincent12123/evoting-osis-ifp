@@ -30,3 +30,4 @@ Homestead.yaml
 Thumbs.db
 /database/*.sqlite*
 /storage/backups
+/.env.browser

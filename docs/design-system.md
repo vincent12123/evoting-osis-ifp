@@ -3,8 +3,8 @@
 > **Layer 3: Environment (visual).** AI **hanya boleh** memakai token yang terdaftar di sini.
 > Token diterapkan sebagai `theme.extend.colors` Tailwind (kiosk) dan warna primer Filament (admin).
 >
-> ⚠️ **Warna di §2 SEMENTARA** (diturunkan dari prototipe `evoting.txt`). Pemilik memilih **warna resmi
-> SMPN 2 Sintang** — ganti nilai hex begitu diterima (SPEC §10, kriteria DS-05). Nama token tidak berubah.
+> ✅ **Warna di §2 sudah final** — disetujui pemilik 2026-11-23 setelah melihat layar IFP (DS-05).
+> Logo diunggah admin di Pengaturan Pemilihan (SPEC v1.3), bukan berkas tetap di `public/`.
 
 ---
 
@@ -27,13 +27,14 @@
 
 ## 1. Identitas Visual
 
-- **Sumber:** logo SMPN 2 Sintang & logo OSIS (menunggu, simpan di `public/images/logo-sekolah.png`, `public/images/logo-osis.png`)
+- **Sumber:** logo diunggah admin di **Pengaturan Pemilihan → Logo** (PNG/JPG/WebP, ≤ 2 MB; disimpan WebP ≤ 512 px dengan latar transparan dipertahankan). Tampil di kepala layar IFP (SCR-K2, K3, K7) dan kop berita acara (SCR-A7). Tanpa logo → kotak biru bertuliskan "OSIS".
+- SVG sengaja tidak diterima (bisa memuat skrip).
 - **Kesan yang ingin dibangun:** resmi dan tepercaya seperti pemilu, tetapi ramah untuk siswa SMP
 - **Hindari:** kesan main-main/kekanak-kanakan, terlalu banyak warna, teks kecil, warna yang memihak salah satu paslon pada elemen umum
 
 ---
 
-## 2. Warna (SEMENTARA)
+## 2. Warna (final, disetujui pemilik 2026-11-23)
 
 ### 2.1 Warna Utama
 | Token | Hex | Pemakaian |

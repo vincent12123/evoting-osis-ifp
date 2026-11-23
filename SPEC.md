@@ -9,7 +9,7 @@
 > - Setiap requirement diberi ID `REQ-xx` agar bisa dilacak ke acceptance criteria.
 > - SPEC hanya boleh diubah oleh pemilik. AI boleh **mengusulkan** perubahan (lihat §12), bukan mengubah langsung.
 
-- **Versi:** 1.1
+- **Versi:** 1.3
 - **Status:** Disepakati
 - **Pemilik:** Sukardi (pengembang) — untuk Panitia Pemilihan OSIS SMPN 2 Sintang
 - **Terakhir diperbarui:** 2026-11-23
@@ -79,6 +79,7 @@ bisa di-nol-kan oleh siapa saja lewat panel di layar itu sendiri, dan rekapnya h
 | REQ-21 | Server menolak suara dari TPS yang sama bila jaraknya < 2 detik dari suara sebelumnya di TPS itu, sebagai rem terhadap sentuhan beruntun atau alat klik otomatis | Sebaiknya |
 | REQ-22 | Admin melihat status setiap IFP: **Daring** (terlihat ≤ 30 detik lalu) atau **Luring**, beserta waktu terakhir terlihat, dan bisa **melepas** IFP dari TPS | Wajib |
 | REQ-23 | Aktivitas penting tercatat di log: login admin, ubah status pemilihan, ubah paslon, aktivasi/lepas IFP, kosongkan suara uji coba | Wajib |
+| REQ-24 | Admin mengunggah, mengganti, atau menghapus **logo** di Pengaturan Pemilihan; logo tampil di kepala layar IFP dan kop berita acara (keputusan pemilik, v1.3) | Wajib |
 
 > Aturan: setiap REQ **wajib** punya minimal satu kriteria di `verification/acceptance-criteria.md`.
 
@@ -124,6 +125,7 @@ bisa di-nol-kan oleh siapa saja lewat panel di layar itu sendiri, dan rekapnya h
 | signing_place | string(60) | Tidak | tempat penandatanganan berita acara; kosong = garis isian |
 | signatories | json: daftar {role, name}, 0–8 butir | Ya | bawaan: Ketua Panitia, Pembina OSIS, Kepala Sekolah (nama kosong) |
 | witness_signatures | boolean | Ya | bawaan `true`: satu kolom tanda tangan saksi per paslon |
+| logo_path | string | Tidak | logo sekolah/OSIS, diunggah di Pengaturan; PNG/JPG/WebP ≤ 2 MB, disimpan WebP ≤ 512 px (alfa dipertahankan); SVG ditolak. Mengubah logo menaikkan `settings_version` |
 
 ### 4.3 `candidates` — Paslon
 | Field | Tipe | Wajib | Keterangan |
@@ -335,7 +337,7 @@ Mode 1x sentuh: sentuh foto/tombol langsung mengirim suara (tanpa SCR-K5).
 | 1 | Setup Laravel 13 + Filament 5 + SQLite (WAL) + Pest, migrasi semua tabel §4, seeder admin | `php artisan migrate:fresh --seed` sukses, test pertama hijau, login admin jalan (AC-01, AC-02) | ✅ 2026-11-23 |
 | 2 | Admin: pemilihan, paslon, pengaturan sentuh, log aktivitas | AC-10 s/d AC-19 lolos | ✅ 2026-11-23 |
 | 3 | Admin: TPS, kode aktivasi, status IFP; API kiosk (aktivasi, status, kirim suara) | AC-20 s/d AC-39 lolos (feature test API) | ✅ 2026-11-23 |
-| 4 | Layar kiosk di IFP: SCR-K1 s/d SCR-K7 | AC-40 s/d AC-49, UX-K lolos; screenshot 1920×1080 & 3840×2160 | ☐ |
+| 4 | Layar kiosk di IFP: SCR-K1 s/d SCR-K7 | AC-40 s/d AC-49, UX-K lolos; screenshot 1920×1080 & 3840×2160 | ✅ 2026-11-23 (⏳ uji IFP asli di CP6) |
 | 5 | Rekap, berita acara cetak, alur status lengkap (uji coba → dibuka → ditutup) | AC-50 s/d AC-56 lolos | ✅ 2026-11-23 |
 | 6 | Uji beban + uji di IFP Hisense asli + uji pengguna 5 siswa + poles UX | NF-22, UX-T-01, UX-T-02, A11Y lolos | ☐ |
 | 7 | Deploy ke VPS smpn2 + backup otomatis + SOP hari-H | NF-04, NF-05 lolos; situs bisa diakses dari subdomain | ☐ |
@@ -349,7 +351,7 @@ Mode 1x sentuh: sentuh foto/tombol langsung mengirim suara (tanpa SCR-K5).
 - [x] ~~Kerahasiaan layar terima kasih (REQ-18)~~ → disetujui 2026-11-23
 - [x] ~~Rem 2 detik per TPS (REQ-21)~~ → disetujui 2026-11-23
 - [x] ~~Status Ditutup final~~ → disetujui 2026-11-23
-- [ ] **Warna resmi & logo SMPN 2 Sintang** — belum diterima. Token warna di `design-system.md` masih **sementara** (dari prototipe).
+- [x] ~~Warna resmi & logo~~ → warna saat ini disetujui sebagai final; logo diunggah admin di Pengaturan (2026-11-23)
 - [ ] **Subdomain persisnya** (domain sekolah) dan apakah HTTPS lewat Cloudflare/Let's Encrypt.
 - [ ] **VPS smpn2:** OS, versi PHP, akses SSH, user kerja. Perlu dicek sebelum checkpoint 7.
 - [ ] **Model & OS IFP:** versi Android dan browser bawaan Hisense 75WM61FE, ukuran viewport CSS sebenarnya (1920×1080 atau 3840×2160), dan apakah ada mode kunci aplikasi/kiosk agar siswa tidak keluar dari browser. Dicek di IFP asli pada checkpoint 4/6.
@@ -383,6 +385,9 @@ Mode 1x sentuh: sentuh foto/tombol langsung mengirim suara (tanpa SCR-K5).
 | 2026-11-23 | Istilah "Pilih" menggantikan "Coblos" di layar | Konsistensi istilah (bisa dikembalikan atas permintaan panitia) |
 | 2026-11-23 | Penandatangan, nama/alamat sekolah, dan tempat tanda tangan berita acara diatur admin di Pengaturan; bawaan Ketua Panitia, Pembina OSIS, Kepala Sekolah + saksi tiap paslon | Keputusan pemilik saat Checkpoint 5 |
 | 2026-11-23 | Berita acara memuat kolom isian tangan "jumlah pemilih menurut catatan pengawas" per TPS | Keputusan pemilik — pembanding karena tidak ada daftar pemilih |
+| 2026-11-23 | Semua paslon (2–6) ditata dalam satu baris di layar IFP, bukan 3×2 | Keputusan pemilik — 3×2 menaruh tombol baris atas di luar jangkauan siswa (UX-K1) |
+| 2026-11-23 | Warna token design system yang sekarang menjadi warna final | Keputusan pemilik setelah melihat layar IFP |
+| 2026-11-23 | Logo diunggah admin di Pengaturan, tampil di layar IFP & berita acara | Keputusan pemilik; tidak bergantung berkas tetap di server |
 
 ---
 
@@ -393,3 +398,5 @@ Mode 1x sentuh: sentuh foto/tombol langsung mengirim suara (tanpa SCR-K5).
 | 0.1 | 2026-11-23 | Semua | Draft awal hasil wawancara + analisis prototipe `evoting.txt` | AI | Disetujui |
 | 1.0 | 2026-11-23 | REQ-18, REQ-21, §5.2, §5.5, §10, §11 | Tiga usulan AI disetujui pemilik; SPEC disepakati | AI | Disetujui |
 | 1.1 | 2026-11-23 | REQ-16, §4.2, §10, §11 | Pengaturan berita acara (penandatangan, kop, tempat, saksi) + kolom absen manual | Pemilik | Disetujui |
+| 1.2 | 2026-11-23 | ux-flow SCR-K3 (tata letak) | Kartu SCR-K3 menyebut "5–6 paslon dalam 3×2", bertentangan dengan UX-K1 (semua target sentuh siswa di pita 35%–95% tinggi layar): baris atas 3×2 pasti di atas 35%. Usulan: **semua paslon 2–6 dalam satu baris**; tiap kartu tersusun nama (info, atas) → foto (sentuh, 35–70%) → tombol Visi & Misi + PILIH bertumpuk (70–93%). Pada 6 paslon tiap kartu ±26 cm di layar 75". | AI (CP4) | Disetujui |
+| 1.3 | 2026-11-23 | REQ-24, §4.2, §10, §11 | Warna final; unggah logo di Pengaturan | Pemilik | Disetujui |

@@ -80,7 +80,7 @@ Jika ada konflik, ikuti dokumen dengan prioritas lebih tinggi, lalu **laporkan k
 |---|---|
 | Instal dependency | `composer install && npm install` |
 | Jalankan lokal | `composer run dev` (server + Vite) atau `php artisan serve` + `npm run dev` |
-| Jalankan test | `php artisan test` |
+| Jalankan test | `php artisan test` (Pest) dan `npm run test:browser` (layar kiosk, Playwright + Edge, ±2,5 menit; butuh `npm run build` dulu) |
 | Format / lint | `./vendor/bin/pint` |
 | Migrasi database | `php artisan migrate` (lokal: `migrate:fresh --seed`) |
 | Build produksi | `npm run build && php artisan optimize` |
@@ -186,7 +186,8 @@ tests/Browser/              test layar kiosk (AC-40–AC-49, UX-K1–UX-K4)
 - 2026-11-23 Composer tidak ada di PATH Bash: pakai `php /c/php83/composer.phar …` (atau `composer` di PowerShell).
 - 2026-11-23 Jangan mengedit file PHP ber-namespace lewat skrip Python di heredoc Bash — backslash bisa berubah; pakai alat Edit/Write.
 - 2026-11-23 `vendor/bin/pest --init` bersifat interaktif dan menggantung — jangan dijalankan; `tests/Pest.php` sudah ada.
-- 2026-11-23 npm global (Herd, Node 24.11.1) rusak: `npm install` gagal "Class extends value undefined" di `minipass-flush`. Perbaiki sebelum Checkpoint 4 (build aset kiosk).
+- 2026-11-23 npm global (Herd, Node 24.11.1) sempat rusak ("Class extends value undefined" di `minipass-flush`): sisa upgrade npm meninggalkan `minipass` 3.3.6 di `npm/node_modules/minipass-flush/node_modules/` dan `minipass-sized/node_modules/` (keduanya butuh ^7). **Diperbaiki** dengan mengganti nama folder itu menjadi `minipass.v3-basi-2026-11-23`. Kalau npm di-upgrade lagi dan error sama muncul, periksa pola ini.
+- 2026-11-23 `npm install` di mesin ini lambat (±6 menit). Plugin `laravel:fonts` bawaan skeleton mengunduh font dari fonts.bunny.net saat build dan bisa timeout — CP4 menggantinya dengan font lokal (`@fontsource`).
 - 2026-11-23 Rule closure kustom di form Filament harus dibungkus: `->rules([fn (): Closure => function ($attribute, $value, $fail) {…}])`. Closure telanjang dievaluasi Filament dan gagal ("[$attribute] was unresolvable").
 - 2026-11-23 Repeater `->simple()`: di test, isi state sebagai `[['text' => '…'], …]` dan pakai `Repeater::fake()`. Data yang tersimpan tetap daftar teks biasa.
 - 2026-11-23 FileUpload di form edit membuang path yang berkasnya tidak ada di disk. Di test, buat berkasnya dulu di `Storage::fake('public')`.
@@ -200,3 +201,8 @@ tests/Browser/              test layar kiosk (AC-40–AC-49, UX-K1–UX-K4)
 - 2026-11-23 `php artisan tinker <berkas>` masuk mode interaktif dan menggantung. Jalankan skrip dengan `php artisan tinker --execute="require '<berkas.php>';" </dev/null`; berkas wajib diawali `<?php`. Skrip uji yang butuh data palsu: alihkan ke `:memory:` dulu (`config([...database => ':memory:']); DB::purge('sqlite');`) agar DB lokal tidak tersentuh.
 - 2026-11-23 Cek cetak A4 tanpa printer: `msedge.exe --headless=new --no-pdf-header-footer --user-data-dir=<scratch> --print-to-pdf=<out.pdf> file:///<html>`, lalu baca PDF-nya dengan alat Read.
 - 2026-11-23 Hasil `php artisan test` berupa JSON ringkas. Untuk membaca kegagalan, simpan ke berkas di scratchpad lalu baca `failures` dan `error_details` (daftar `failures` saja tidak memuat error).
+- 2026-11-23 Di Blade, atribut Alpine `@error` dibaca sebagai direktif Blade `@error` → error "unexpected end of file". Pakai `x-on:error` (berlaku juga untuk nama direktif lain seperti `@json`, `@class`).
+- 2026-11-23 Jeda 400 ms antar sentuhan hanya untuk sentuhan siswa (`tap()`); keypad aktivasi dipakai guru dan tidak boleh kena jeda (angka bisa hilang saat mengetik cepat). Di test browser, tunggu ≥ 450 ms setelah "Mulai" sebelum menyentuh kartu.
+- 2026-11-23 Test browser: `server.php` Laravel membaca `index.php` dari direktori kerja — jalankan `php -S` dengan cwd = `public/`. Server uji memakai `.env.browser` (dibuat runner, DB `database/browser.sqlite`); skenario lewat `php artisan kiosk:fixture` yang hanya terdaftar saat APP_ENV=browser.
+- 2026-11-23 Tailwind v4 memindai seluruh project secara otomatis (termasuk `evoting.txt`) → kelas tak terpakai seperti `backdrop-blur` ikut masuk. `kiosk.css` memakai `@import 'tailwindcss' source(none);` + `@source` eksplisit.
+- 2026-11-23 Plus Jakarta Sans hanya sampai ketebalan 800 (`@fontsource/plus-jakarta-sans/900.css` tidak ada).

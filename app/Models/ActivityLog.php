@@ -56,6 +56,7 @@ class ActivityLog extends Model
         'signing_place' => 'tempat penandatanganan',
         'signatories' => 'penandatangan',
         'witness_signatures' => 'kolom saksi',
+        'logo_path' => 'logo',
         'is_active' => 'aktif',
     ];
 
@@ -83,7 +84,7 @@ class ActivityLog extends Model
             $after = array_key_exists($key, $new) ? $this->display($key, $new[$key]) : null;
 
             $parts[] = match (true) {
-                in_array($key, ['vision', 'missions', 'photo_path', 'signatories'], true) => "{$label} diubah",
+                in_array($key, ['vision', 'missions', 'photo_path', 'signatories', 'logo_path'], true) => "{$label} diubah",
                 $before !== null && $after !== null => "{$label}: {$before} → {$after}",
                 $after !== null => "{$label}: {$after}",
                 default => "{$label}: {$before}",

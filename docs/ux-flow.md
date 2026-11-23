@@ -4,8 +4,8 @@
 > menyelesaikan tugasnya*: layar apa, urutan apa, dan apa yang tampil di setiap keadaan.
 > Layar yang belum berstatus **Disetujui** tidak boleh dikoding.
 
-- **Versi:** 0.3
-- **Status:** Draft
+- **Versi:** 0.6
+- **Status:** Disetujui (semua layar, 2026-11-23)
 - **Mengacu SPEC versi:** 1.0
 
 ---
@@ -136,7 +136,7 @@ SCR-A2/SCR-A6 → lihat rekap → [Cetak berita acara] → SCR-A7 (tab baru) →
 
 ### SCR-K1 — Aktivasi IFP
 
-- **Status:** Draft
+- **Status:** Disetujui (2026-11-23)
 - **Tujuan:** mengaitkan IFP ini ke satu TPS dengan kode dari panitia.
 - **Aksi utama:** "Hubungkan"
 - **Aksi lain:** keypad angka 0–9, "Hapus"
@@ -168,7 +168,7 @@ SCR-A2/SCR-A6 → lihat rekap → [Cetak berita acara] → SCR-A7 (tab baru) →
 
 ### SCR-K2 — Siap
 
-- **Status:** Draft
+- **Status:** Disetujui (2026-11-23)
 - **Tujuan:** memulai layar penuh dan mengaktifkan suara (browser mewajibkan satu sentuhan) sebelum siswa memakai.
 - **Aksi utama:** "Mulai"
 - **Data:** nama TPS, nama pemilihan.
@@ -197,13 +197,13 @@ SCR-A2/SCR-A6 → lihat rekap → [Cetak berita acara] → SCR-A7 (tab baru) →
 
 ### SCR-K3 — Pilih Paslon (layar utama siswa)
 
-- **Status:** Draft
+- **Status:** Disetujui (2026-11-23)
 - **Tujuan:** siswa mengenali dan menyentuh paslon pilihannya.
 - **Aksi utama:** sentuh foto atau tombol "PILIH {nomor}" (satu per kartu)
 - **Aksi lain:** "Visi & Misi" per kartu
 - **Data:** nama pemilihan, nama TPS, jumlah suara masuk TPS ini, untuk tiap paslon: foto, nomor urut, nama ketua & wakil, slogan, ringkasan visi (maks 2 baris). Pita "UJI COBA" bila status Uji coba.
 - **Hak akses:** IFP teraktivasi, status Uji coba/Dibuka.
-- **Tata letak:** 2–4 paslon dalam satu baris; 5–6 paslon dalam 3×2. Tanpa scroll. Kepala layar ≤ 12vh. Tombol "PILIH" berada di pita 70–92% tinggi layar.
+- **Tata letak:** semua paslon (2–6) dalam **satu baris** (SPEC v1.2). Tiap kartu dari atas: nama ketua & wakil (informasi, tanpa target sentuh) → foto + nomor + slogan + ringkasan visi (area sentuh, mulai ≥ 35% tinggi layar) → tombol "Visi & Misi" dan "PILIH {nomor}" bertumpuk (±75–95%). Tanpa scroll. Kepala layar ≤ 12vh.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -230,7 +230,7 @@ SCR-A2/SCR-A6 → lihat rekap → [Cetak berita acara] → SCR-A7 (tab baru) →
 
 ### SCR-K4 — Visi & Misi
 
-- **Status:** Draft
+- **Status:** Disetujui (2026-11-23)
 - **Tujuan:** siswa membaca visi & misi satu paslon.
 - **Aksi utama:** "PILIH {nomor}"
 - **Aksi lain:** "KEMBALI"
@@ -258,7 +258,7 @@ SCR-A2/SCR-A6 → lihat rekap → [Cetak berita acara] → SCR-A7 (tab baru) →
 
 ### SCR-K5 — Konfirmasi (mode 2x sentuh)
 
-- **Status:** Draft
+- **Status:** Disetujui (2026-11-23)
 - **Tujuan:** memastikan pilihan benar sebelum suara dikirim.
 - **Aksi utama:** "YA, PILIH {nomor}"
 - **Aksi lain:** "BATAL, GANTI PILIHAN"
@@ -287,7 +287,7 @@ SCR-A2/SCR-A6 → lihat rekap → [Cetak berita acara] → SCR-A7 (tab baru) →
 
 ### SCR-K6 — Terima Kasih
 
-- **Status:** Draft
+- **Status:** Disetujui (2026-11-23)
 - **Tujuan:** memberi tahu suara tercatat dan menyiapkan layar untuk siswa berikutnya.
 - **Aksi utama:** tidak ada (otomatis). Tidak ada tombol "lanjut sekarang", supaya siswa tidak menyentuh berulang-ulang.
 - **Data:** tanda centang besar, teks terima kasih, hitung mundur. Tidak menyebut paslon (REQ-18).
@@ -309,7 +309,7 @@ SCR-A2/SCR-A6 → lihat rekap → [Cetak berita acara] → SCR-A7 (tab baru) →
 
 ### SCR-K7 — Layar Status
 
-- **Status:** Draft
+- **Status:** Disetujui (2026-11-23)
 - **Tujuan:** menjelaskan kenapa siswa belum/tidak bisa memilih, dan apa yang harus dilakukan guru.
 - **Aksi utama:** tidak ada (berubah otomatis saat status berubah).
 - **Data:** nama TPS, satu ikon + satu judul + satu kalimat.
@@ -392,6 +392,7 @@ SCR-A2/SCR-A6 → lihat rekap → [Cetak berita acara] → SCR-A7 (tab baru) →
 
 - **Status:** Disetujui (2026-11-23) · **Aksi utama:** "Simpan pengaturan"
 - **Field:** nama pemilihan, tahun ajaran, mode sentuh (radio: "2x sentuh — pilih lalu konfirmasi (disarankan)" / "1x sentuh — langsung tercatat"), jeda layar terima kasih (2/3/5 detik), bel (ya/tidak), confetti (ya/tidak).
+- **Bagian "Logo"** (v0.6): unggah/ganti/hapus logo sekolah/OSIS (PNG, JPG, WebP ≤ 2 MB). Validasi: "Logo harus PNG, JPG, atau WebP, maksimal 2 MB." Logo tampil di kepala SCR-K2, K3, K7 (kotak putih) dan kop SCR-A7; tanpa logo → kotak biru "OSIS".
 - **Bagian "Berita acara"** (v0.3): nama sekolah, alamat sekolah, tempat penandatanganan, daftar penandatangan (jabatan + nama, bisa ditambah/dihapus/diurutkan; bawaan Ketua Panitia, Pembina OSIS, Kepala Sekolah), sakelar "Kolom tanda tangan saksi untuk setiap paslon".
 - Memilih 1x sentuh menampilkan peringatan: "Pada mode 1x sentuh, sentuhan tidak sengaja langsung menjadi suara dan tidak bisa dibatalkan."
 
@@ -463,3 +464,6 @@ SCR-A2/SCR-A6 → lihat rekap → [Cetak berita acara] → SCR-A7 (tab baru) →
 | 0.1 | 2026-11-23 | Semua | Draft | AI |
 | 0.2 | 2026-11-23 | SCR-A1 – SCR-A8 | Disetujui | Pemilik |
 | 0.3 | 2026-11-23 | SCR-A5 (bagian Berita acara), SCR-A7 (isi) | Disetujui (keputusan pemilik CP5) | Pemilik |
+| 0.4 | 2026-11-23 | SCR-K1 – SCR-K7 | Disetujui | Pemilik |
+| 0.5 | 2026-11-23 | SCR-K3 (tata letak satu baris) | Disetujui | Pemilik |
+| 0.6 | 2026-11-23 | SCR-A5 (bagian Logo), SCR-K2/K3/K7, SCR-A7 (logo) | Disetujui (keputusan pemilik) | Pemilik |

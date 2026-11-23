@@ -5,10 +5,12 @@ namespace App\Models;
 use App\Enums\ElectionStatus;
 use App\Enums\TouchMode;
 use App\Observers\ElectionObserver;
+use App\Support\LogoImage;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 /** Pemilihan — SPEC §4.2. */
 #[ObservedBy(ElectionObserver::class)]
@@ -33,7 +35,14 @@ class Election extends Model
         'signing_place',
         'signatories',
         'witness_signatures',
+        'logo_path',
     ];
+
+    /** URL publik logo (SPEC v1.3), atau null bila belum diunggah. */
+    public function logoUrl(): ?string
+    {
+        return $this->logo_path ? Storage::disk(LogoImage::DISK)->url($this->logo_path) : null;
+    }
 
     /** Penandatangan bawaan berita acara (keputusan pemilik CP5); nama diisi admin di Pengaturan. */
     public const DEFAULT_SIGNATORIES = [

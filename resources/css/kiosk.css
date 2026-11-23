@@ -1,0 +1,264 @@
+/*
+ * Layar IFP (kiosk) — docs/design-system.md mode "Kiosk".
+ * - Ukuran memakai vh/clamp (IFP bisa 1920×1080 atau 3840×2160 CSS px).
+ * - Target sentuh siswa hanya di pita 35%–95% tinggi layar (UX-K1).
+ * - Tanpa backdrop-filter, animasi hanya transform/opacity (NFR-25).
+ */
+/* source(none): jangan pindai seluruh project (mis. prototipe evoting.txt) — hanya @source di bawah. */
+@import 'tailwindcss' source(none);
+@import '@fontsource/plus-jakarta-sans/500.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/800.css'; /* ketebalan tertinggi keluarga ini; 900 memakai 800 */
+
+@source '../views/kiosk/**/*.blade.php';
+@source '../js/**/*.js';
+
+/* Token design-system.md §2 (SEMENTARA — ganti nilai saat warna resmi SMPN 2 Sintang diterima). */
+@theme {
+    --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+    --color-primary: #2563eb;
+    --color-primary-dark: #1e40af;
+    --color-primary-light: #dbeafe;
+    --color-accent: #facc15;
+
+    --color-kiosk-bg: #0f172a;
+    --color-kiosk-surface: #ffffff;
+    --color-kiosk-overlay: #020617;
+    --color-text: #0f172a;
+    --color-text-muted: #475569;
+    --color-text-inverse: #f8fafc;
+    --color-border: #cbd5e1;
+    --color-neutral-button: #e2e8f0;
+
+    --color-success: #059669;
+    --color-warning: #d97706;
+    --color-danger: #dc2626;
+
+    --color-paslon-1: #2563eb;
+    --color-paslon-2: #059669;
+    --color-paslon-3: #7c3aed;
+    --color-paslon-4: #dc2626;
+    --color-paslon-5: #c2410c;
+    --color-paslon-6: #0e7490;
+}
+
+/* ---------- Dasar layar sentuh ---------- */
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--color-kiosk-bg);
+    color: var(--color-text-inverse);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+    overscroll-behavior: none;
+}
+
+[x-cloak] { display: none !important; }
+
+.k-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    /* atas 2.2 + kepala 10.5 + celah 1.6 = kartu mulai 14.3vh; bawah 3.5 → tombol terakhir berakhir ±94.5vh */
+    padding: 2.2vh 3vh 3.5vh;
+    gap: 1.6vh;
+}
+
+/* Aksen per paslon dipakai lewat variabel --accent pada elemen kartu/panel. */
+.accent-paslon-1 { --accent: var(--color-paslon-1); }
+.accent-paslon-2 { --accent: var(--color-paslon-2); }
+.accent-paslon-3 { --accent: var(--color-paslon-3); }
+.accent-paslon-4 { --accent: var(--color-paslon-4); }
+.accent-paslon-5 { --accent: var(--color-paslon-5); }
+.accent-paslon-6 { --accent: var(--color-paslon-6); }
+
+/* ---------- Kepala layar (≤ 12vh, informasi saja) ---------- */
+.k-header {
+    height: 10.5vh;
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 2vh;
+}
+.k-header .logo {
+    width: 7vh; height: 7vh; flex: none;
+    border-radius: 1.6vh;
+    background: var(--color-primary);
+    display: grid; place-items: center;
+    font-size: 2.1vh; font-weight: 900; letter-spacing: -.02em;
+}
+/* Logo unggahan (SPEC v1.3): kotak putih agar logo bergaris gelap tetap terlihat di latar gelap. */
+.k-header .logo.has-image { background: var(--color-kiosk-surface); padding: .6vh; }
+.k-header .logo img { width: 100%; height: 100%; object-fit: contain; }
+.k-header .title { font-size: 2.8vh; font-weight: 900; line-height: 1.15; }
+.k-header .hint { font-size: 2.3vh; color: #cbd5e1; font-weight: 600; }
+.k-header .meta { margin-left: auto; display: flex; gap: 1.4vh; align-items: center; flex: none; }
+.k-pill {
+    display: inline-flex; align-items: center; gap: 1vh;
+    padding: 0.9vh 1.8vh; border-radius: 99vh;
+    font-size: 2.3vh; font-weight: 800;
+    background: #1e293b; border: 0.2vh solid #334155;
+}
+.k-pill .dot { width: 1.4vh; height: 1.4vh; border-radius: 50%; background: var(--color-success); }
+.k-pill.trial { background: var(--color-warning); border-color: var(--color-warning); color: #fff; }
+
+/* ---------- SCR-K3 grid paslon: satu baris (usulan SPEC §12 v1.2) ---------- */
+.k-grid {
+    flex: 1;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 2.2vh;
+    min-height: 0;
+}
+.k-grid.few { padding-inline: 8vw; } /* 2 paslon: jangan terlalu lebar */
+
+.k-card {
+    position: relative;
+    display: grid;
+    /* info (atas, tanpa target sentuh) | foto | tombol — dihitung agar foto mulai ≥ 35% tinggi layar */
+    grid-template-rows: 20.5vh 1fr auto;
+    background: var(--color-kiosk-surface);
+    color: var(--color-text);
+    border-radius: 2.5vh;
+    overflow: hidden;
+    border: 0.6vh solid transparent;
+    box-shadow: 0 0.8vh 2.4vh rgba(0, 0, 0, .35);
+    transition: transform 120ms ease-out, border-color 120ms ease-out;
+}
+.k-card.pressed { transform: scale(0.97); border-color: var(--accent); }
+
+.k-card .info {
+    padding: 2vh 2.2vh 1.2vh;
+    display: flex; flex-direction: column; justify-content: flex-end;
+}
+.k-card .names { font-size: 3.6vh; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; }
+
+.k-card .photo {
+    position: relative;
+    min-height: 0;
+    background: var(--accent);
+    cursor: pointer;
+}
+.k-card .photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+.k-card .photo .fallback {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    color: #fff; font-size: 4vh; font-weight: 900;
+}
+.k-card .photo .shade {
+    position: absolute; inset: auto 0 0 0; padding: 6vh 2vh 1.6vh;
+    background: linear-gradient(to top, rgba(2, 6, 23, .92), rgba(2, 6, 23, .6) 60%, transparent);
+    color: #fff;
+}
+.k-card .tagline {
+    font-size: 2.3vh; font-style: italic; font-weight: 700; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.k-card .vision {
+    margin-top: .6vh; font-size: 2.2vh; font-weight: 600; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.k-number {
+    position: absolute; top: 1.6vh; left: 1.6vh;
+    min-width: 11vh; padding: .4vh 1.6vh;
+    border-radius: 1.8vh; border: .4vh solid #fff;
+    background: var(--accent); color: #fff;
+    font-size: clamp(48px, 7vh, 160px); font-weight: 900; line-height: 1; text-align: center;
+}
+
+.k-card .actions { display: flex; flex-direction: column; gap: 1.4vh; padding: 1.4vh; }
+
+/* ---------- Tombol siswa (≥ 9vh tinggi, ≥ 12vh lebar) ---------- */
+.k-btn {
+    min-height: 9.5vh; min-width: 12vh;
+    padding: 0 2.4vh;
+    border: none; border-radius: 1.8vh;
+    font: inherit; font-size: 3vh; font-weight: 900; letter-spacing: .02em; text-transform: uppercase;
+    display: inline-flex; align-items: center; justify-content: center; gap: 1.2vh;
+    cursor: pointer;
+    transition: transform 100ms ease-out, opacity 100ms ease-out;
+}
+.k-btn:active, .k-btn.pressed { transform: scale(0.96); }
+.k-btn[disabled] { opacity: .5; }
+.k-btn.choose { background: var(--accent); color: #fff; }
+.k-btn.neutral { background: var(--color-neutral-button); color: var(--color-text); }
+.k-btn.start { background: var(--color-primary); color: #fff; min-height: 13vh; font-size: 4vh; padding: 0 8vh; }
+.k-btn:focus-visible { outline: .5vh solid var(--color-accent); outline-offset: .4vh; }
+
+/* ---------- Lapisan (SCR-K4, K5): tanpa blur ---------- */
+.k-overlay {
+    position: fixed; inset: 0; z-index: 20;
+    background: rgba(2, 6, 23, .8);
+    display: flex; align-items: flex-end; justify-content: center;
+    padding: 6vh 4vh 5vh;
+}
+.k-panel {
+    width: min(62vw, 120vh);
+    max-height: 89vh;
+    background: var(--color-kiosk-surface); color: var(--color-text);
+    border-radius: 3vh;
+    padding: 3.5vh 4vh 3vh;
+    display: flex; flex-direction: column; gap: 2.4vh;
+    border-top: 1.2vh solid var(--accent, var(--color-primary));
+}
+.k-panel h2 { margin: 0; font-size: 5vh; font-weight: 900; line-height: 1.1; text-align: center; }
+.k-panel .lead { font-size: 2.6vh; text-align: center; color: var(--color-text-muted); margin: 0; }
+.k-panel .candidate { display: flex; gap: 3vh; align-items: center; }
+.k-panel .candidate .pic { position: relative; width: 34vh; aspect-ratio: 4 / 3; border-radius: 2vh; overflow: hidden; background: var(--accent); flex: none; }
+.k-panel .candidate .pic img { width: 100%; height: 100%; object-fit: cover; }
+.k-panel .candidate .num { font-size: 9vh; font-weight: 900; color: var(--accent); line-height: 1; }
+.k-panel .candidate .names { font-size: 4vh; font-weight: 800; line-height: 1.15; }
+.k-panel .buttons { display: flex; justify-content: space-between; gap: 10vh; margin-top: auto; }
+.k-panel .buttons .k-btn { flex: 1; }
+.k-panel .scroll { overflow-y: auto; min-height: 0; font-size: 2.6vh; line-height: 1.4; }
+.k-panel .scroll h3 { font-size: 2.4vh; letter-spacing: .08em; color: var(--accent); margin: 1.6vh 0 .6vh; }
+.k-panel .scroll ol { margin: 0; padding-left: 3.6vh; }
+.k-panel .scroll li { margin-bottom: .8vh; }
+.k-panel.error { border-top-color: var(--color-danger); }
+.k-panel.error h2 { color: var(--color-danger); }
+
+/* ---------- Layar penuh (K1 aktivasi, K2 siap, K6 terima kasih, K7 status) ---------- */
+.k-full {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center; padding: 6vh 4vh;
+}
+.k-full .icon { width: 16vh; height: 16vh; }
+.k-full h1 { margin: 2vh 0 1vh; font-size: 6vh; font-weight: 900; line-height: 1.1; }
+.k-full p { margin: 0; font-size: 3vh; max-width: 70vw; color: #cbd5e1; }
+
+.k-start { position: absolute; top: 58vh; }
+
+.k-thanks { background: var(--color-success); color: #fff; justify-content: center; z-index: 30; }
+.k-thanks p { color: #ecfdf5; }
+.k-thanks .count {
+    display: inline-grid; place-items: center; width: 8vh; height: 8vh; margin: 0 1vh;
+    border-radius: 50%; background: #fff; color: var(--color-success); font-weight: 900;
+}
+.k-trial-band { margin-top: 3vh; padding: 1.2vh 3vh; border-radius: 1.4vh; background: var(--color-warning); font-size: 2.6vh; font-weight: 800; }
+
+/* SCR-K1 keypad: kotak kode di 26–36%, tombol di 40–92% */
+.k-code { display: flex; gap: 1.4vh; margin-top: 3vh; }
+.k-code span {
+    width: 8vh; height: 10vh; border-radius: 1.6vh; background: #1e293b; border: .3vh solid #334155;
+    display: grid; place-items: center; font-size: 6vh; font-weight: 900;
+}
+/* 44vh + 4 baris × 11vh + 3 × 1.6vh = berakhir 92.8vh (di dalam pita 35–95%) */
+.k-keypad { position: absolute; top: 44vh; display: grid; grid-template-columns: repeat(3, 17vh); gap: 1.6vh; }
+.k-keypad .k-btn { min-height: 11vh; font-size: 5vh; background: #fff; color: var(--color-text); padding: 0; }
+.k-keypad .k-btn.wide { font-size: 2.3vh; }
+.k-keypad .k-btn.go { background: var(--color-primary); color: #fff; }
+.k-message { font-size: 2.6vh; font-weight: 700; min-height: 3.4vh; margin-top: 2vh; }
+.k-message.error { color: #fca5a5; }
+
+@media (prefers-reduced-motion: reduce) {
+    .k-card, .k-btn { transition: none; }
+}

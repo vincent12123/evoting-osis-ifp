@@ -96,14 +96,19 @@ php artisan key:generate
 touch database/database.sqlite
 php artisan migrate --seed
 php artisan storage:link
+npm run build
 composer run dev                # http://localhost:8000/admin dan /kiosk
 ```
 
 ## 🧪 Menjalankan Test
 
 ```bash
-php artisan test
+php artisan test          # Pest: model, API, panel admin
+npm run build && npm run test:browser   # layar kiosk di Microsoft Edge (Playwright), ±2,5 menit
 ```
+
+Test browser menyalakan server uji sendiri di `127.0.0.1:8123` dengan database `database/browser.sqlite`
+(DB lokal tidak disentuh). Screenshot bukti tersimpan di `storage/app/browser-shots/`.
 
 ## 🌐 Deployment
 

@@ -7,55 +7,46 @@
 
 ## Status Saat Ini
 
-- **Checkpoint aktif:** 4 — Layar kiosk di IFP: SCR-K1 s/d SCR-K7 (belum dimulai, **terblokir**: lihat di bawah)
-- **Checkpoint selesai:** 1 ✅, 2 ✅, 3 ✅, 5 ✅ (2026-11-23)
-- **Versi SPEC yang dipakai:** 1.1 · **ux-flow:** 0.3 (SCR-A1–A8 Disetujui, SCR-K1–K7 masih Draft)
+- **Checkpoint aktif:** 6 — Uji beban + uji di IFP Hisense asli + uji pengguna 5 siswa + poles UX (belum dimulai)
+- **Checkpoint selesai:** 1 ✅, 2 ✅, 3 ✅, 4 ✅ (⏳ uji di IFP asli), 5 ✅ (2026-11-23)
+- **Versi SPEC yang dipakai:** 1.3 · **ux-flow:** 0.6 (semua layar Disetujui)
 - **Terakhir diperbarui:** 2026-11-23 oleh AI
 
-## ✅ Sudah Selesai — Checkpoint 5
-- **Keputusan pemilik (SPEC v1.1):** penandatangan berita acara diatur di Pengaturan (bawaan Ketua Panitia, Pembina OSIS, Kepala Sekolah + saksi tiap paslon), nama/alamat sekolah & tempat tanda tangan diisi admin, kolom isian tangan "jumlah pemilih menurut catatan pengawas" per TPS
-- Migrasi `add_report_settings_to_elections_table` (school_name, school_address, signing_place, signatories, witness_signatures) + bagian "Berita acara" di Pengaturan Pemilihan (tidak menaikkan `settings_version`)
-- `App\Support\ElectionRecap`: satu sumber angka (resmi vs uji coba, persentase 1 desimal, "Terbanyak"/"Suara sama", TPS × paslon)
-- **Rekap Hasil** (`App\Filament\Pages\Recap`, `/admin/recap`, kartu SCR-A6): tab Resmi/Uji coba (saat Uji coba), banner sementara, batang perolehan, rincian per TPS, poll 10 detik
-- **Berita Acara** (`/berita-acara`, `BeritaAcaraController`, `resources/views/print/berita-acara.blade.php`, kartu SCR-A7): A4, tanpa aset eksternal, watermark SEMENTARA sebelum Ditutup, hanya suara resmi
-- Dasbor: "Lihat rekap" saat Ditutup; "Tutup pemungutan" langsung mengarah ke Rekap
-- `/` dialihkan ke `/admin`; tamu di rute non-panel diarahkan ke login panel
-- Test `RecapTest` → total **116 test / 615 assertion hijau**
-- PDF A4 skenario terberat (6 paslon × 4 TPS × 760 suara) = 2 halaman — contoh di scratchpad sesi
+## ✅ Sudah Selesai — Warna final & logo (SPEC v1.3)
+- **Warna:** token design system yang sekarang disetujui pemilik sebagai warna final → DS-05 ✅ (tidak perlu dikerjakan lagi di CP6)
+- **Logo** (REQ-24): bagian "Logo" di Pengaturan Pemilihan (`elections.logo_path`, migrasi `add_logo_path_to_elections_table`), diolah `App\Support\LogoImage` (WebP ≤ 512 px, transparansi tetap, SVG ditolak); tampil di kepala layar IFP SCR-K2/K3/K7 (`resources/views/kiosk/_logo.blade.php`) dan kop berita acara; API status mengirim `logo_url`; ganti logo menaikkan `settings_version` sehingga IFP ikut berubah ≤ 10 detik
+- Test: `LogoTest` (5 test) + browser AC-58 → **123 Pest + 18 browser hijau**
 
-## ✅ Sudah Selesai — Checkpoint 3
-- **TPS & IFP** (`PollingStationResource`, kartu SCR-A4, dialog tambah/ubah): status TPS, status IFP Daring/Luring/Belum terhubung (≤ 30 detik = Daring), suara masuk, tabel diperbarui tiap 10 detik
-  - "Buat kode aktivasi": 6 angka, berlaku 30 menit, sekali pakai; dialog (`App\Livewire\ActivationCodeStatus`, poll 5 detik) berubah menjadi "IFP terhubung ke {TPS}."
-  - "Lepas IFP", "Nonaktifkan/Aktifkan TPS", hapus TPS (ditolak bila sudah ada suara sah)
-- **API kiosk** (`routes/api.php`, `KioskApiController`, middleware `AuthenticateKioskDevice`):
-  - `POST /api/kiosk/activate` — kode → token 48 karakter (DB menyimpan SHA-256), maks 10 gagal / 10 menit / IP
-  - `GET /api/kiosk/status` — TPS, jumlah suara TPS, status & pengaturan pemilihan (memperbarui "terakhir terlihat")
-  - `GET /api/kiosk/candidates` — paslon tanpa angka suara
-  - `POST /api/kiosk/votes` — `App\Actions\CastVote`: transaksi IMMEDIATE, idempoten `client_uuid`, rem 2 detik per TPS (milidetik), `is_trial` saat Uji coba
-  - Error JSON `{code, message}` dengan teks dari kartu (`App\Exceptions\KioskException`), tidak dicatat sebagai error di log
-- **Dasbor** (`App\Filament\Pages\Dashboard`, kartu SCR-A2): status + alasan belum bisa dibuka, tombol Mulai uji coba / Buka / Tutup / Kosongkan uji coba / Tambah 10 suara simulasi (`App\Actions\ElectionLifecycle`), kartu statistik & tabel TPS (poll 10 detik), tanpa perolehan per paslon
-- Status Ditutup final (AC-55) dan pembatasan simulasi/kosongkan ke status Uji coba (AC-56) dikerjakan lebih awal
-- Penjaga model: `Vote` tidak bisa diubah, suara sah tidak bisa dihapus; TPS dengan suara sah tidak bisa dihapus
-- SQLite `transaction_mode` = IMMEDIATE
-- Test baru: `KioskActivationApiTest`, `VoteApiTest`, `PollingStationAdminTest`, `ElectionLifecycleTest` → **105 test / 548 assertion hijau**
-- Uji manual lokal: curl (aktivasi, status, daftar paslon, suara, kiriman ulang → 200, rem → 429) + browser (tambah TPS, dialog kode berubah otomatis, dasbor Uji coba dengan IFP Daring)
-- Data lokal: pemilihan demo berstatus **Uji coba**, TPS Aula terhubung ke "IFP palsu" (token di scratchpad sesi), 1 suara uji coba
+## ✅ Sudah Selesai — Checkpoint 4 (layar IFP)
+- **npm diperbaiki** (AGENTS §8): dua salinan `minipass` 3.3.6 basi di npm Herd diganti nama
+- Aset kiosk lewat Vite: `resources/css/kiosk.css` (token design-system sebagai `@theme`, ukuran `vh`, `source(none)`, 16 KB), `resources/js/kiosk.js` (Alpine + canvas-confetti), font Plus Jakarta Sans lokal (`@fontsource`). Font Bunny CDN bawaan skeleton dihapus
+- **`/kiosk`** (`KioskPageController`, `resources/views/kiosk/index.blade.php`): SCR-K1 aktivasi (keypad layar), K2 siap (layar penuh + buka suara), K3 pilih paslon (satu baris, nama → foto → tombol), K4 visi & misi, K5 konfirmasi/simpan/gagal, K6 terima kasih, K7 status (4 varian), teks persis dari kartu
+- Logika: token di localStorage, polling status 5 detik, muat ulang paslon saat `settings_version` berubah, deteksi putus & pulih otomatis, jeda 400 ms (sentuhan siswa saja), abaikan multi-sentuh, YA aktif setelah 600 ms, timeout lapisan 30 detik, kirim suara 8 detik dengan UUID tetap untuk "Coba lagi", pemetaan galat API ke teks kartu, bel Web Audio & confetti bisa dimatikan
+- **Pratinjau layar IFP** untuk admin (`/kiosk/pratinjau`, tombol "Pratinjau layar IFP" di halaman Paslon) — memenuhi TSK-05 yang ditunda dari CP2
+- **Test browser** `tests/Browser/kiosk.test.mjs` (`npm run test:browser`): Playwright-core + Edge terpasang, server uji 8123 + `database/browser.sqlite`, skenario `php artisan kiosk:fixture` (`App\Console\KioskFixture`, hanya APP_ENV=browser) → **17 test hijau** (AC-40–AC-49, UX-01–05, UX-K1–K4) + **116 Pest hijau**
+- Screenshot 1920×1080 & 3840×2160 di `storage/app/browser-shots/` (tidak di-commit); kritik diri → diperbaiki: label peran terpotong, slogan menutupi foto, keypad menimpa kotak kode, teks logo meluber
+- Uji manual di browser lokal: Mulai → pilih → konfirmasi → terima kasih (uji coba) → kembali, jumlah suara naik
+
+## ✅ Sudah Selesai — Checkpoint 5
+- Rekap Hasil `/admin/recap`, Berita Acara `/berita-acara` (A4, 6×4 = 2 halaman), pengaturan berita acara (SPEC v1.1)
+
+## ✅ Sudah Selesai — Checkpoint 1–3
+- Lihat riwayat sesi; ringkasnya: setup + skema, pemilihan/paslon/log, TPS + aktivasi IFP + API kiosk + dasbor
 
 ## 🔄 Sedang Dikerjakan / Tertunda
-- AC-53: cetak di printer sekolah sungguhan dicek pemilik ⏳
-- Pratinjau kartu kiosk di form paslon → CP4
-- NF-01 HTTPS → dicek saat deploy (CP7)
-- Kiriman paralel sungguhan (NF-22) → uji beban CP6
-- **Belum ada commit**
+- Kriteria yang butuh **IFP Hisense asli** (CP6): UX-K5 (tanpa menu tekan-lama/zoom/tarik-muat-ulang), UX-K6 (pilihan tak terbaca dari antrean), NF-23 (WiFi IFP putus-sambung), NF-25 (respons sentuhan), viewport CSS sebenarnya, cara mengunci aplikasi browser IFP
+- AC-53: cetak berita acara di printer sekolah ⏳
+- A11Y-03 (kontras, axe) belum diukur → CP6
+- Perubahan sejak commit `1e29b32` **belum di-commit**
 
 ## ⛔ Blocker / Menunggu Keputusan
-- **CP4 terblokir oleh npm rusak** (`npm install` gagal di npm milik Herd Node 24.11.1, AGENTS §8). Layar kiosk butuh build Tailwind + Alpine lewat Vite. Perlu diperbaiki di mesin pengguna (mis. pasang ulang Node/npm lewat Herd atau nvm)
-- **Kartu layar kiosk SCR-K1–K7 belum disetujui** — wajib sebelum CP4 dikoding
-- SPEC §10 tersisa: warna & logo resmi (dibutuhkan untuk tampilan kiosk), subdomain + VPS smpn2, data IFP asli, kelas paslon tampil atau tidak
+- Logo resmi SMPN 2 Sintang tinggal **diunggah admin** di Pengaturan Pemilihan → Logo
+- SPEC §10 lain: subdomain + VPS smpn2, data IFP asli, kelas paslon ditampilkan atau tidak (saat ini: kelas tampil di Visi & Misi bila diisi)
 
 ## ➡️ Langkah Berikutnya
-1. Pengguna memperbaiki npm, dan menyetujui kartu SCR-K1–K7
-2. Checkpoint 4: halaman `/kiosk` (Blade + Alpine + Tailwind, ukuran `vh`), state mesin layar, polling status 5 detik, alur 1x/2x sentuh, timeout 30 detik, jeda 600 ms tombol YA, abaikan multi-sentuh, layar status, bel & confetti lokal; test browser AC-40–AC-49, UX-K1–UX-K4; screenshot 1920×1080 & 3840×2160
+1. Admin mengunggah logo resmi di Pengaturan Pemilihan
+2. Checkpoint 6: uji beban NF-22 (4 klien × 1 suara/2 detik × 10 menit), uji di IFP asli (UX-K5, UX-K6, NF-23, NF-25), uji pengguna 5 siswa (UX-T-01) & panitia (UX-T-02/03), kontras A11Y-03
+3. Checkpoint 7: deploy ke VPS smpn2 + backup otomatis + SOP hari-H
 
 ---
 
@@ -69,3 +60,7 @@
 | 2026-11-23 | 2 | Pemilihan, paslon (foto WebP, validasi, kunci), log aktivitas, validasi Indonesia | AC-10–AC-19 ✅, UX-07 ✅ — 49 test hijau |
 | 2026-11-23 | 3 | TPS & aktivasi IFP, API kiosk, catat suara, dasbor & status pemilihan | AC-20–AC-39, AC-55, AC-56 ✅ — 105 test hijau |
 | 2026-11-23 | 5 | Rekap hasil, berita acara A4, pengaturan berita acara (SPEC v1.1) | AC-50–AC-54 ✅ — 116 test hijau, PDF 2 halaman |
+| 2026-11-23 | — | Commit pertama `1e29b32` | — |
+| 2026-11-23 | 4 | Perbaikan npm, layar IFP SCR-K1–K7, pratinjau admin, test browser Playwright + Edge | AC-40–AC-49, UX-K1–K4 ✅ — 17 test browser + 116 Pest hijau |
+| 2026-11-23 | 4 | Tata letak satu baris disetujui → SPEC v1.2, ux-flow v0.5 | — |
+| 2026-11-23 | 4+ | Warna final disetujui, unggah logo di Pengaturan (SPEC v1.3) | AC-57, AC-58, DS-05 ✅ — 123 Pest + 18 browser hijau |
