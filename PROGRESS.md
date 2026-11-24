@@ -45,6 +45,14 @@
 - A11Y-03 (kontras, axe) belum diukur → CP6
 - Perubahan sejak commit `1e29b32` **belum di-commit**
 
+## 🖥️ Server smpn2 (dicek 2026-11-24, baca saja lewat `ssh smpn2`)
+- Ubuntu 24.04.4, **PHP 8.3.6** (CLI + `php8.3-fpm` aktif) → perbaikan "tulis di awal" di `CastVote` memang wajib (Laravel mengabaikan IMMEDIATE di PHP < 8.4)
+- Ekstensi ada: gd (WebP ✅), intl, mbstring, zip, xml, curl, bcmath, pdo_mysql, pdo_pgsql
+- **✅ `php8.3-sqlite3` terpasang 2026-11-24 11.13 WIB** (disetujui pemilik, pilihan A: tetap PHP 8.3). Tanpa upgrade paket lain; pemasangan memicu restart otomatis php-fpm sekali (beberapa detik) + reload. Sebelum/sesudah: keenam situs (website, sisfo, lms, spmb, survei, stba) tetap 200/301. Uji PDO SQLite + WAL + busy_timeout di server lolos
+- **`sqlite3` CLI sengaja TIDAK dipasang**: ikut meng-upgrade pustaka bersama `libsqlite3-0` (…2.8 → …2.9) yang juga dipakai LMS. Backup di CP7 memakai PHP (`VACUUM INTO` / `SQLite3::backup`), bukan `sqlite3 .backup` — perlu diselaraskan dengan NFR-05 saat CP7
+- PHP 8.4 tidak dipakai: tidak ada di repo Ubuntu 24.04 (butuh PPA), sisfo & website (Laravel 12 + Filament 4) memakai php8.3-fpm yang sama
+- Composer 2.9.7, Node 22.22.2, npm 10.9.7; disk 67 GB kosong dari 96 GB
+
 ## ⛔ Blocker / Menunggu Keputusan
 - Logo resmi SMPN 2 Sintang tinggal **diunggah admin** di Pengaturan Pemilihan → Logo
 - SPEC §10 lain: subdomain + VPS smpn2, data IFP asli, kelas paslon ditampilkan atau tidak (saat ini: kelas tampil di Visi & Misi bila diisi)
@@ -72,3 +80,5 @@
 | 2026-11-23 | 4+ | Warna final disetujui, unggah logo di Pengaturan (SPEC v1.3) | AC-57, AC-58, DS-05 ✅ — 123 Pest + 18 browser hijau |
 | 2026-11-24 | — | Perbaikan: foto paslon macet "Memuat" di form edit (CORS, URL storage absolut) → URL relatif | `PublicStorageUrlTest` ✅ — 125 Pest + 18 browser hijau |
 | 2026-11-24 | 6 | Uji 4 TPS 10 menit + perbaikan "database is locked" di CastVote | NF-22 ✅ — 1.033 suara, 0 galat; 126 Pest + 18 browser hijau |
+| 2026-11-24 | — | Commit `802c791` + push; cek server smpn2 (PHP 8.3.6, php8.3-sqlite3 belum ada) | — |
+| 2026-11-24 | — | Pasang `php8.3-sqlite3` di server smpn2 (pilihan A, tetap PHP 8.3); `sqlite3` CLI ditunda | Modul aktif di fpm, uji SQLite lolos, 6 situs tetap normal |

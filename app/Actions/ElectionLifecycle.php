@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Vote;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * Perpindahan status pemilihan (SPEC §5.2):
@@ -47,6 +48,15 @@ class ElectionLifecycle
         $this->expect($election, [ElectionStatus::Open]);
         $election->closed_at = now();
         $this->setStatus($election, ElectionStatus::Closed, $by);
+
+        // NFR-05: backup sesaat setelah ditutup. Kegagalan backup tidak boleh menggagalkan penutupan;
+        // dicatat di log agar panitia/pengembang tahu (backup terjadwal tiap jam tetap berjalan).
+        try {
+            $path = app(BackupDatabase::class)->handle('setelah-ditutup');
+            ActivityLog::record('election.backup', $by, $election, ['new' => ['berkas' => basename($path)]]);
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 
     /** @return int jumlah suara uji coba yang dikosongkan */

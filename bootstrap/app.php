@@ -16,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Rute admin di luar panel Filament (mis. berita acara) mengarahkan tamu ke login panel.
         $middleware->redirectGuestsTo(fn () => route('filament.admin.auth.login'));
+
+        // Produksi di balik Cloudflare Tunnel: cloudflared → nginx di mesin yang sama. Hanya proxy lokal yang
+        // dipercaya, sehingga skema HTTPS & IP asli (untuk batas percobaan kode aktivasi) benar, tetapi orang
+        // yang mengakses nginx langsung dari internet tidak bisa memalsukan X-Forwarded-For.
+        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Penolakan kiosk (kode salah, rem 2 detik, pemungutan ditutup) adalah alur normal, bukan error.

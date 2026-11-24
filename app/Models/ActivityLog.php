@@ -23,6 +23,7 @@ class ActivityLog extends Model
         'election.status_changed' => 'Ubah status pemilihan',
         'election.trial_cleared' => 'Kosongkan suara uji coba',
         'election.simulated_votes' => 'Tambah suara simulasi',
+        'election.backup' => 'Backup database',
         'device.activated' => 'Hubungkan IFP',
         'device.released' => 'Lepas IFP',
         'polling_station.created' => 'Tambah TPS',
