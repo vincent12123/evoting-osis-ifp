@@ -41,7 +41,10 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            // URL relatif: foto paslon & logo selalu dimuat dari alamat yang sedang dibuka
+            // (localhost / 127.0.0.1 / IP LAN / subdomain). URL absolut dari APP_URL membuat
+            // kolom unggah Filament macet "Memuat" karena diblokir CORS bila alamatnya berbeda.
+            'url' => env('PUBLIC_STORAGE_URL', '/storage'),
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

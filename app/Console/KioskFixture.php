@@ -3,16 +3,21 @@
 namespace App\Console;
 
 use App\Actions\ActivateDevice;
+use App\Actions\ElectionLifecycle;
 use App\Actions\GenerateActivationCode;
 use App\Actions\ReleaseDevice;
+use App\Http\Controllers\BeritaAcaraController;
 use App\Models\Candidate;
 use App\Models\Election;
 use App\Models\PollingStation;
 use App\Models\Vote;
 use App\Support\CandidatePhoto;
+use App\Support\ElectionRecap;
 use App\Support\LogoImage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 /**
@@ -44,6 +49,11 @@ class KioskFixture
             'release' => $this->release(),
             'break-photo' => $this->breakPhoto(),
             'logo' => $this->logo(),
+            // Uji 4 TPS (NF-22): siapkan, tutup, rekap, cetak berita acara.
+            'four-tps' => $this->fourTps($options),
+            'close' => $this->close(),
+            'recap' => $this->recap(),
+            'berita-acara' => $this->beritaAcara((string) $value),
             'votes' => [
                 'total' => Vote::where('is_trial', false)->count(),
                 'trial' => Vote::where('is_trial', true)->count(),
@@ -127,6 +137,77 @@ class KioskFixture
         app(ReleaseDevice::class)->handle($this->station());
 
         return ['ok' => true];
+    }
+
+    /**
+     * 4 TPS dengan IFP terhubung, lalu pemungutan dibuka lewat alur sebenarnya (ElectionLifecycle).
+     *
+     * @return array{tokens: array<string, string>, candidates: list<array{id:int, number:int}>}
+     */
+    private function fourTps(array $o): array
+    {
+        $this->reset([...$o, 'status' => 'preparation']);
+        PollingStation::query()->delete(); // TPS bawaan reset diganti 4 TPS uji
+
+        $tokens = [];
+        foreach (['TPS Aula', 'TPS Lab Komputer', 'TPS Perpustakaan', 'TPS Kelas 9A'] as $name) {
+            $station = PollingStation::create(['name' => $name]);
+            [, $tokens[$name]] = app(ActivateDevice::class)->handle(app(GenerateActivationCode::class)->handle($station));
+        }
+
+        $election = Election::active();
+        $election->update([
+            'school_name' => 'SMP Negeri 2 Sintang',
+            'signing_place' => 'Sintang',
+        ]);
+        app(ElectionLifecycle::class)->open($election->fresh());
+
+        return [
+            'tokens' => $tokens,
+            'candidates' => $election->candidates()->get(['id', 'number'])->map(fn ($c) => ['id' => $c->id, 'number' => $c->number])->all(),
+        ];
+    }
+
+    private function close(): array
+    {
+        app(ElectionLifecycle::class)->close(Election::active());
+
+        return ['ok' => true];
+    }
+
+    /** Rekap resmi dari server + pemeriksaan integritas data. */
+    private function recap(): array
+    {
+        $election = Election::active();
+        $recap = new ElectionRecap($election);
+
+        return [
+            'status' => $election->status->value,
+            'opened_at' => $election->opened_at?->toIso8601String(),
+            'closed_at' => $election->closed_at?->toIso8601String(),
+            'total' => $recap->total,
+            'top' => $recap->topLabel(),
+            'candidates' => $recap->candidates->map(fn ($r) => [
+                'number' => $r['candidate']->number, 'votes' => $r['votes'], 'percent' => $r['percent'],
+            ])->all(),
+            'stations' => $recap->stations->map(fn ($s) => [
+                'name' => $s['station']->name, 'total' => $s['total'], 'votes' => $s['votes'],
+            ])->all(),
+            'integrity' => [
+                'rows' => Vote::count(),
+                'trial_rows' => Vote::where('is_trial', true)->count(),
+                'duplicate_uuids' => Vote::query()->select('client_uuid')->groupBy('client_uuid')->havingRaw('COUNT(*) > 1')->get()->count(),
+                'votes_columns' => Schema::getColumnListing('votes'),
+                'journal_mode' => DB::selectOne('PRAGMA journal_mode')->journal_mode,
+            ],
+        ];
+    }
+
+    private function beritaAcara(string $path): array
+    {
+        file_put_contents($path, app(BeritaAcaraController::class)()->render());
+
+        return ['ok' => true, 'path' => $path];
     }
 
     /** Logo PNG transparan (lingkaran merah) seperti yang diunggah admin di Pengaturan. */

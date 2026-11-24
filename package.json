@@ -5,7 +5,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "test:browser": "node --test --test-concurrency=1 tests/Browser/kiosk.test.mjs"
+        "test:browser": "node --test --test-concurrency=1 tests/Browser/kiosk.test.mjs",
+        "test:4tps": "node tests/Load/four-tps.mjs"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

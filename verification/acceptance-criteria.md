@@ -107,7 +107,7 @@
 | NF-04 | NFR-05 | Backup otomatis per jam berjalan di VPS, dan satu backup berhasil di-restore ke salinan uji dengan jumlah suara sama | MANUAL | ☐ | |
 | NF-05 | NFR-03 | Tidak ada teks UI berbahasa Inggris di kiosk maupun admin (termasuk pesan validasi Laravel/Filament) | REVIEW | ☐ | |
 | NF-20 | NFR-20 | Setiap aksi REQ-23 menghasilkan satu baris log dengan user, waktu, nilai lama → baru | AUTO | ☐ | |
-| NF-22 | NFR-22 | Uji beban: 4 klien × 1 suara per 2 detik × 10 menit (±1.200 suara) ke server produksi/staging → 0 respons 5xx, jumlah baris `votes` = jumlah respons 201 | AUTO | ☐ | |
+| NF-22 | NFR-22 | Uji beban: 4 klien × 1 suara per 2 detik × 10 menit (±1.200 suara) ke server produksi/staging → 0 respons 5xx, jumlah baris `votes` = jumlah respons 201 | AUTO | ✅ | `npm run test:4tps` (2026-11-24): 4 TPS × 10 menit, 4 proses PHP ke satu SQLite → 1.033 suara, **0 galat**, rekap server = hitungan IFP per paslon & per TPS, 40/40 kiriman ulang tidak menambah suara, 0 UUID ganda — `verification/hasil-uji-4tps.md`. Uji pertama menemukan 29× "database is locked" (PHP 8.3 mengabaikan IMMEDIATE) → diperbaiki di `CastVote`. Ukur ulang di VPS (CP7) |
 | NF-23 | NFR-23 | WiFi IFP dimatikan 30 detik lalu dinyalakan → SCR-K7 "Koneksi terputus" tampil ≤ 10 detik, lalu kembali normal ≤ 10 detik setelah tersambung, tanpa disentuh | MANUAL | ⏳ | Simulasi di browser lolos (AC-47: putus → K7 ≤ 10 detik → pulih otomatis); uji WiFi IFP asli di CP6 |
 | NF-25 | NFR-25 | Halaman kiosk tidak memuat skrip/CSS dari CDN eksternal; tidak ada `backdrop-filter`; foto paslon ≤ 300 KB; di IFP asli respons visual sentuhan terasa seketika (≤ 150 ms, dicek rekaman video 60 fps) | REVIEW + MANUAL | ⏳ | Tanpa CDN, tanpa backdrop-filter (CSS dibatasi `source(none)`, 16 KB), font lokal, foto WebP ≤ 300 KB ✅; respons sentuhan di IFP asli dicek CP6 |
 
@@ -228,3 +228,4 @@
 | 2026-11-23 | 5 | Lolos | 116 test, 615 assertion hijau; AC-50 s.d. AC-54 ✅, UX-09 ✅, AC-02 lengkap; PDF berita acara 6×4 = 2 halaman A4; cek browser halaman Rekap (tab Resmi/Uji coba) |
 | 2026-11-23 | 4 | Lolos (⏳ uji IFP asli) | 17 test browser (Playwright + Edge) + 116 Pest hijau; AC-40 s.d. AC-49, UX-01–05, UX-K1–K4 ✅; screenshot 1920×1080 & 3840×2160; UX-K5/K6, NF-23, NF-25 menunggu IFP asli (CP6) |
 | 2026-11-23 | 4+ | Lolos | Warna final (DS-05 ✅) + unggah logo (REQ-24): 123 Pest + 18 browser hijau; AC-57, AC-58 ✅ |
+| 2026-11-24 | 6 (sebagian) | NF-22 lolos | Uji 4 TPS 10 menit: 1.033 suara, 0 galat, rekap cocok, berita acara PDF; bug "database is locked" ditemukan & diperbaiki; 126 Pest + 18 browser hijau |

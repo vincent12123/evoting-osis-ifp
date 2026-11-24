@@ -7,8 +7,10 @@ use App\Models\Candidate;
 use App\Models\Election;
 use App\Models\PollingStation;
 use App\Models\Vote;
+use Illuminate\Database\Events\TransactionBeginning;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -169,4 +171,24 @@ it('suara tidak menulis log aktivitas (kerahasiaan, tidak ada jejak per suara)',
     castVote($this)->assertCreated();
 
     expect(ActivityLog::count())->toBe($before);
+});
+
+it('NF-22 perintah pertama di transaksi suara adalah tulis (kunci tulis diambil di awal, aman di PHP < 8.4)', function () {
+    // Hanya kueri SESUDAH transaksi CastVote dimulai yang dihitung (middleware perangkat juga meng-update
+    // polling_stations, tapi di luar transaksi — itu tidak boleh membuat test ini lolos).
+    $inTransaction = false;
+    $queries = [];
+    Event::listen(TransactionBeginning::class, function () use (&$inTransaction) {
+        $inTransaction = true;
+    });
+    DB::listen(function ($q) use (&$inTransaction, &$queries) {
+        if ($inTransaction) {
+            $queries[] = strtolower(ltrim($q->sql));
+        }
+    });
+
+    castVote($this)->assertCreated();
+
+    expect($queries)->not->toBeEmpty()
+        ->and($queries[0])->toStartWith('update "polling_stations"');
 });

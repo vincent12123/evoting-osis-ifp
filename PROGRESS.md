@@ -12,6 +12,12 @@
 - **Versi SPEC yang dipakai:** 1.3 · **ux-flow:** 0.6 (semua layar Disetujui)
 - **Terakhir diperbarui:** 2026-11-23 oleh AI
 
+## ✅ Sudah Selesai — Checkpoint 6 (sebagian): uji 4 TPS / NF-22 (2026-11-24)
+- `npm run test:4tps` (`tests/Load/four-tps.mjs`): 4 TPS, 4 proses PHP terpisah ke satu SQLite, 10 menit → **1.033 suara, 0 galat**, rekap server = hitungan IFP (per paslon & per TPS), 40/40 kiriman ulang tidak menambah suara, berita acara PDF 2 halaman. Laporan: `verification/hasil-uji-4tps.md`
+- **Bug ditemukan & diperbaiki:** di PHP 8.3 Laravel mengabaikan `transaction_mode=IMMEDIATE` → 29 galat 500 "database is locked" dalam 30 detik. `CastVote` kini mengawali transaksi dengan perintah tulis + 3 percobaan; test regresi di `VoteApiTest`
+- Pengatur skenario: aksi `four-tps`, `close`, `recap`, `berita-acara` di `App\Console\KioskFixture`
+- Perbaikan sebelumnya hari ini: URL storage relatif (foto paslon macet "Memuat" di form edit)
+
 ## ✅ Sudah Selesai — Warna final & logo (SPEC v1.3)
 - **Warna:** token design system yang sekarang disetujui pemilik sebagai warna final → DS-05 ✅ (tidak perlu dikerjakan lagi di CP6)
 - **Logo** (REQ-24): bagian "Logo" di Pengaturan Pemilihan (`elections.logo_path`, migrasi `add_logo_path_to_elections_table`), diolah `App\Support\LogoImage` (WebP ≤ 512 px, transparansi tetap, SVG ditolak); tampil di kepala layar IFP SCR-K2/K3/K7 (`resources/views/kiosk/_logo.blade.php`) dan kop berita acara; API status mengirim `logo_url`; ganti logo menaikkan `settings_version` sehingga IFP ikut berubah ≤ 10 detik
@@ -45,7 +51,7 @@
 
 ## ➡️ Langkah Berikutnya
 1. Admin mengunggah logo resmi di Pengaturan Pemilihan
-2. Checkpoint 6: uji beban NF-22 (4 klien × 1 suara/2 detik × 10 menit), uji di IFP asli (UX-K5, UX-K6, NF-23, NF-25), uji pengguna 5 siswa (UX-T-01) & panitia (UX-T-02/03), kontras A11Y-03
+2. Checkpoint 6 (sisa): uji di IFP asli (UX-K5, UX-K6, NF-23, NF-25), uji pengguna 5 siswa (UX-T-01) & panitia (UX-T-02/03), kontras A11Y-03
 3. Checkpoint 7: deploy ke VPS smpn2 + backup otomatis + SOP hari-H
 
 ---
@@ -64,3 +70,5 @@
 | 2026-11-23 | 4 | Perbaikan npm, layar IFP SCR-K1–K7, pratinjau admin, test browser Playwright + Edge | AC-40–AC-49, UX-K1–K4 ✅ — 17 test browser + 116 Pest hijau |
 | 2026-11-23 | 4 | Tata letak satu baris disetujui → SPEC v1.2, ux-flow v0.5 | — |
 | 2026-11-23 | 4+ | Warna final disetujui, unggah logo di Pengaturan (SPEC v1.3) | AC-57, AC-58, DS-05 ✅ — 123 Pest + 18 browser hijau |
+| 2026-11-24 | — | Perbaikan: foto paslon macet "Memuat" di form edit (CORS, URL storage absolut) → URL relatif | `PublicStorageUrlTest` ✅ — 125 Pest + 18 browser hijau |
+| 2026-11-24 | 6 | Uji 4 TPS 10 menit + perbaikan "database is locked" di CastVote | NF-22 ✅ — 1.033 suara, 0 galat; 126 Pest + 18 browser hijau |

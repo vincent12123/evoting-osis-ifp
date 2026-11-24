@@ -20,11 +20,14 @@ class CastVote
 {
     public const MIN_INTERVAL_MS = 2000;
 
+    /** Percobaan ulang bila SQLite tetap melapor "database is locked" (deteksi bawaan Laravel). */
+    public const TRANSACTION_ATTEMPTS = 3;
+
     /** @return array{vote: Vote, created: bool} */
     public function handle(PollingStation $station, int $candidateId, string $clientUuid): array
     {
         try {
-            return DB::transaction(fn () => $this->record($station, $candidateId, $clientUuid));
+            return DB::transaction(fn () => $this->record($station, $candidateId, $clientUuid), self::TRANSACTION_ATTEMPTS);
         } catch (UniqueConstraintViolationException) {
             // Kiriman ganda bersamaan dengan client_uuid yang sama: kembalikan suara yang sudah ada.
             return ['vote' => Vote::query()->where('client_uuid', $clientUuid)->firstOrFail(), 'created' => false];
@@ -33,6 +36,12 @@ class CastVote
 
     private function record(PollingStation $station, int $candidateId, string $clientUuid): array
     {
+        // NFR-22: langkah PERTAMA wajib menulis agar SQLite mengambil kunci tulis di awal transaksi.
+        // Di PHP < 8.4 Laravel mengabaikan transaction_mode=IMMEDIATE (transaksi tetap DEFERRED); transaksi
+        // yang membaca dulu lalu menulis gagal langsung "database is locked" bila TPS lain menulis di
+        // antaranya, tanpa menunggu busy_timeout. Dengan tulis di awal, TPS lain antre sesuai busy_timeout.
+        PollingStation::query()->whereKey($station->getKey())->update(['device_last_seen_at' => now()]);
+
         // REQ-11: kiriman ulang dengan UUID yang sama = sukses tanpa suara baru.
         $existing = Vote::query()->where('client_uuid', $clientUuid)->first();
         if ($existing !== null) {

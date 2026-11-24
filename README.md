@@ -105,10 +105,12 @@ composer run dev                # http://localhost:8000/admin dan /kiosk
 ```bash
 php artisan test          # Pest: model, API, panel admin
 npm run build && npm run test:browser   # layar kiosk di Microsoft Edge (Playwright), ±2,5 menit
+npm run test:4tps                       # uji 4 TPS sampai hasil (±11 menit); DURATION_SEC=30 untuk uji singkat
 ```
 
 Test browser menyalakan server uji sendiri di `127.0.0.1:8123` dengan database `database/browser.sqlite`
-(DB lokal tidak disentuh). Screenshot bukti tersimpan di `storage/app/browser-shots/`.
+(DB lokal tidak disentuh). Screenshot bukti tersimpan di `storage/app/browser-shots/`. Uji 4 TPS menulis laporan ke
+`verification/hasil-uji-4tps.md` dan berita acara PDF ke `storage/app/uji-4tps/`.
 
 ## 🌐 Deployment
 
