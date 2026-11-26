@@ -410,6 +410,32 @@ test('UX-K1 / UX-K2 / UX-K3 ergonomi 75": pita sentuh 35–95%, ukuran tombol & 
     await visible('K1');
     checkBand((await measure()).targets, 'K1');
 
+    // --kvh mengikuti tinggi area terlihat (innerHeight), termasuk saat jendela berubah ukuran.
+    const kvh = await page.evaluate(() => [getComputedStyle(document.documentElement).getPropertyValue('--kvh'), window.innerHeight / 100]);
+    assert.equal(parseFloat(kvh[0]), kvh[1], `--kvh ${kvh[0]} = innerHeight/100`);
+
+    // K1 sebelum layar penuh: bilah alamat browser IFP menutupi bagian bawah, sementara 1vh tetap dihitung
+    // dari layar penuh. Tiru: area terlihat .k-full dipendekkan 12% dan --kvh diisi seperti oleh kiosk.js
+    // (vh tidak berubah). Seluruh keypad harus tetap di dalam area dan tidak menimpa kotak kode.
+    const covered = await page.evaluate(() => {
+        const full = document.querySelector('[data-screen="K1"]');
+        const visible = Math.round(window.innerHeight * 0.88);
+        full.style.bottom = `${window.innerHeight - visible}px`;
+        document.documentElement.style.setProperty('--kvh', `${visible / 100}px`);
+        const area = full.getBoundingClientRect();
+        const out = [...document.querySelectorAll('.k-keypad .k-btn')]
+            .map((el) => ({ name: el.textContent.trim(), r: el.getBoundingClientRect() }))
+            .filter(({ r }) => r.bottom > area.bottom + 0.5 || r.top < area.top)
+            .map(({ name }) => name);
+        const code = document.querySelector('.k-code').getBoundingClientRect();
+        const keypad = document.querySelector('.k-keypad').getBoundingClientRect();
+        full.style.bottom = '';
+        document.documentElement.style.setProperty('--kvh', `${window.innerHeight / 100}px`);
+        return { out, overlap: keypad.top < code.bottom };
+    });
+    assert.deepEqual(covered.out, [], `K1 dengan bilah alamat: tombol terpotong ${covered.out.join(', ')}`);
+    assert.equal(covered.overlap, false, 'K1 dengan bilah alamat: keypad tidak menimpa kotak kode');
+
     // K3, K4, K5
     await page.evaluate(() => localStorage.clear());
     await openKiosk(token);

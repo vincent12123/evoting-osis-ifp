@@ -15,11 +15,11 @@
 
 {{-- ===================== SCR-K1 Aktivasi IFP ===================== --}}
 <section class="k-full" x-show="screen === 'activation'" x-cloak data-screen="K1">
-    <div style="display:flex;align-items:center;gap:2vh;align-self:flex-start">
+    <div class="k1-brand">
         <div class="k-header"><div class="logo">OSIS</div></div>
-        <div style="font-size:2.8vh;font-weight:900">E-Voting OSIS</div>
+        <div class="k1-brand-name">E-Voting OSIS</div>
     </div>
-    <h1 style="margin-top:1vh">Hubungkan IFP ini ke TPS</h1>
+    <h1>Hubungkan IFP ini ke TPS</h1>
     <p>Masukkan kode 6 angka dari panitia</p>
     <div class="k-code" aria-live="polite" aria-label="Kode aktivasi">
         <template x-for="i in 6" :key="i"><span x-text="code[i - 1] ?? ''"></span></template>

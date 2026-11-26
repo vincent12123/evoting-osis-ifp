@@ -18,6 +18,18 @@ const TAP_DEBOUNCE_MS = 400;
 const ARM_DELAY_MS = 600;
 const IDLE_MS = 30000;
 
+/*
+ * --kvh = 1% dari tinggi area yang BENAR-BENAR terlihat. Di browser Android (IFP), 1vh dihitung dari tinggi
+ * layar tanpa bilah alamat, padahal layar kode (SCR-K1) tampil sebelum layar penuh → bawahnya tertutup bilah.
+ * Layar SCR-K1 memakai var(--kvh) agar seluruh susunannya mengecil mengikuti area yang terlihat.
+ */
+function syncVisibleHeight() {
+    document.documentElement.style.setProperty('--kvh', `${window.innerHeight / 100}px`);
+}
+syncVisibleHeight();
+window.addEventListener('resize', syncVisibleHeight);
+window.visualViewport?.addEventListener('resize', syncVisibleHeight);
+
 const STATUS_TEXT = {
     preparation: {
         title: 'Pemungutan suara belum dibuka',

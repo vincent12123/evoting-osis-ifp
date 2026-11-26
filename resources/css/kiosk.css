@@ -245,18 +245,39 @@ html, body {
 }
 .k-trial-band { margin-top: 3vh; padding: 1.2vh 3vh; border-radius: 1.4vh; background: var(--color-warning); font-size: 2.6vh; font-weight: 800; }
 
-/* SCR-K1 keypad: kotak kode di 26–36%, tombol di 40–92% */
-.k-code { display: flex; gap: 1.4vh; margin-top: 3vh; }
+/*
+ * SCR-K1 keypad: kotak kode di 26–36%, tombol di 44–92.8% (4 baris × 11 + 3 × 1.6).
+ * Layar ini tampil SEBELUM layar penuh, jadi bilah alamat browser IFP (Android) masih terlihat; di sana 1vh
+ * dihitung dari tinggi layar tanpa bilah → baris "Hapus · 0 · Hubungkan" tertutup bilah. Karena itu ukuran
+ * di layar ini memakai --kvh (1% tinggi area yang terlihat, diisi kiosk.js); 1vh hanya cadangan.
+ */
+[data-screen="K1"] { --u: var(--kvh, 1vh); padding: calc(6 * var(--u)) calc(4 * var(--u)); }
+[data-screen="K1"] .k-header { height: calc(10.5 * var(--u)); }
+[data-screen="K1"] .k-header .logo { width: calc(7 * var(--u)); height: calc(7 * var(--u)); border-radius: calc(1.6 * var(--u)); font-size: calc(2.1 * var(--u)); }
+[data-screen="K1"] .k1-brand { display: flex; align-items: center; gap: calc(2 * var(--u)); align-self: flex-start; }
+[data-screen="K1"] .k1-brand-name { font-size: calc(2.8 * var(--u)); font-weight: 900; }
+[data-screen="K1"] h1 { margin: var(--u) 0 var(--u); font-size: calc(6 * var(--u)); }
+[data-screen="K1"] p { font-size: calc(3 * var(--u)); }
+.k-code { display: flex; gap: calc(1.4 * var(--u, 1vh)); margin-top: calc(3 * var(--u, 1vh)); }
 .k-code span {
-    width: 8vh; height: 10vh; border-radius: 1.6vh; background: #1e293b; border: .3vh solid #334155;
-    display: grid; place-items: center; font-size: 6vh; font-weight: 900;
+    width: calc(8 * var(--u, 1vh)); height: calc(10 * var(--u, 1vh)); border-radius: calc(1.6 * var(--u, 1vh));
+    background: #1e293b; border: .3vh solid #334155;
+    display: grid; place-items: center; font-size: calc(6 * var(--u, 1vh)); font-weight: 900;
 }
-/* 44vh + 4 baris × 11vh + 3 × 1.6vh = berakhir 92.8vh (di dalam pita 35–95%) */
-.k-keypad { position: absolute; top: 44vh; display: grid; grid-template-columns: repeat(3, 17vh); gap: 1.6vh; }
-.k-keypad .k-btn { min-height: 11vh; font-size: 5vh; background: #fff; color: var(--color-text); padding: 0; }
-.k-keypad .k-btn.wide { font-size: 2.3vh; }
+.k-keypad {
+    position: absolute; top: calc(44 * var(--u, 1vh)); display: grid;
+    grid-template-columns: repeat(3, calc(17 * var(--u, 1vh))); gap: calc(1.6 * var(--u, 1vh));
+}
+.k-keypad .k-btn {
+    min-height: calc(11 * var(--u, 1vh)); min-width: 0; font-size: calc(5 * var(--u, 1vh));
+    border-radius: calc(1.8 * var(--u, 1vh)); background: #fff; color: var(--color-text); padding: 0;
+}
+.k-keypad .k-btn.wide { font-size: calc(2.3 * var(--u, 1vh)); }
 .k-keypad .k-btn.go { background: var(--color-primary); color: #fff; }
 .k-message { font-size: 2.6vh; font-weight: 700; min-height: 3.4vh; margin-top: 2vh; }
+[data-screen="K1"] .k-message {
+    font-size: calc(2.6 * var(--u)); min-height: calc(3.4 * var(--u)); margin-top: calc(2 * var(--u));
+}
 .k-message.error { color: #fca5a5; }
 
 @media (prefers-reduced-motion: reduce) {
